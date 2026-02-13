@@ -14,6 +14,14 @@ export class AgentState {
   constructor(state: DurableObjectState, env: any) {
     this.state = state;
     this.env = env;
+    
+    // Restore state from storage on startup
+    this.state.blockConcurrencyWhile(async () => {
+      const stored = await this.state.storage.get<TeamState>('agents');
+      if (stored) {
+        this.currentState = stored;
+      }
+    });
   }
 
   async fetch(request: Request): Promise<Response> {
