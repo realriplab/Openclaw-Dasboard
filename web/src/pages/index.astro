@@ -4,7 +4,19 @@ import '../styles/global.css';
 
 // Server-side data fetching for initial state
 const WORKER_URL = 'https://openclaw-dashboard.realriplab.workers.dev';
-const TEAM_ID = 'yunhe-core';
+
+// Get team from URL param or default
+const url = new URL(Astro.request.url);
+const TEAM_ID = url.searchParams.get('team') || 'yunhe-core';
+
+// Available teams
+const TEAMS = [
+  { id: 'yunhe-core', name: 'YunHe Core', description: 'Main development team' },
+  { id: 'team-alpha', name: 'Team Alpha', description: 'Alpha testing team' },
+  { id: 'team-beta', name: 'Team Beta', description: 'Beta testing team' }
+];
+
+const currentTeam = TEAMS.find(t => t.id === TEAM_ID) || TEAMS[0];
 
 let initialData = { agents: [], timestamp: '' };
 
@@ -41,7 +53,21 @@ const AGENT_CONFIG = [
       </div>
       <div>
         <h1 class="text-2xl font-bold text-[var(--color-text-primary)]">Openclaw Dashboard</h1>
-        <p class="text-sm text-[var(--color-text-muted)]">Real-time Agent Monitoring</p>
+        <div class="flex items-center gap-2">
+          <p class="text-sm text-[var(--color-text-muted)]">{currentTeam.name}</p>
+          <!-- Team Selector -->
+          <select 
+            id="teamSelector"
+            class="bg-[var(--color-bg-primary)] border border-[var(--color-border-default)] rounded-lg px-2 py-1 text-sm text-[var(--color-text-secondary)] focus:outline-none focus:border-[var(--color-border-focus)]"
+            onchange="window.location.href = '?team=' + this.value"
+          >
+            {TEAMS.map(team => (
+              <option value={team.id} selected={team.id === TEAM_ID}>
+                {team.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
     </div>
     
