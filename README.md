@@ -1,26 +1,47 @@
 # Openclaw Dashboard
 
-Real-time AI Agent status dashboard - Multi-tenant SaaS solution
+Real-time visualization panel for OpenClaw multi-agent systems. Monitor your AI agents' status and progress from anywhere - local or remote.
+
+## Purpose
+
+Openclaw Dashboard provides a live, visual interface for users running multiple OpenClaw agents. Whether you're managing agents on your local machine or accessing them remotely, this dashboard gives you instant visibility into:
+
+- **Agent Activity**: See which agents are working or idle in real-time
+- **Status Overview**: Color-coded indicators for quick status assessment  
+- **Remote Access**: View your agent fleet from any browser, anywhere
+- **Progress Tracking**: Monitor ongoing tasks and agent utilization
 
 ## Architecture
 
 ```
 ┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
 │  Local Machine  │────▶│  Cloudflare      │◀────│  Browser Client │
-│  (Agent Status) │     │  Worker + DO     │     │  (Live Dashboard)│
+│  (OpenClaw      │     │  Worker + DO     │     │  (Dashboard)    │
+│   Agents)       │     │  (Real-time Hub) │     │  (Any Device)   │
 └─────────────────┘     └──────────────────┘     └─────────────────┘
        bridge.py              Durable Object           SSE Stream
+                              (State Sync)            (Live Updates)
 ```
 
-## Live URL
+## Live Demo
 
 - **Dashboard**: `https://openclaw.realrip.com`
-- **API Endpoint**: `https://openclaw.realrip.com/api/agents/:teamId`
-- **SSE Stream**: `https://openclaw.realrip.com/api/sse/:teamId`
+- **API**: `https://openclaw.realrip.com/api/agents/:teamId`
+- **Real-time Stream**: `https://openclaw.realrip.com/api/sse/:teamId`
+
+## Features
+
+- **Real-time Updates**: Server-Sent Events (SSE) for instant status changes
+- **Multi-tenant**: Support multiple teams/agents with isolated data
+- **Cloud Native**: Deployed on Cloudflare's edge network for global low latency
+- **Local Bridge**: Python script pushes local agent status to cloud
+- **CI/CD**: GitHub Actions auto-deployment on every push
 
 ## Quick Start
 
-### 1. Local Bridge
+### For OpenClaw Users
+
+1. **Start the Local Bridge** (pushes your agent status to cloud):
 
 ```bash
 cd local-bridge
@@ -30,65 +51,89 @@ export API_TOKEN="your-token"
 python3 bridge.py
 ```
 
-### 2. Worker Deployment (Auto CI/CD)
+2. **View Your Dashboard**:
+   
+   Open `https://openclaw.realrip.com` in any browser
 
-GitHub Actions configured. Push to `main` branch auto-deploys:
+### For Developers
 
-```bash
-git push origin main
-```
-
-**Setup GitHub Secrets:**
-
-1. Visit: `https://github.com/realriplab/Openclaw-Dasboard/settings/secrets/actions`
-2. Click **New repository secret**
-3. Name: `CLOUDFLARE_API_TOKEN`
-4. Value: [Your Cloudflare API Token]
-
-**Create Token:**
-1. https://dash.cloudflare.com/profile/api-tokens
-2. Create Token → Custom token
-3. Permissions:
-   - Account: Cloudflare Workers:Edit
-   - Zone: Zone:Read (select realrip.com)
-
-### 3. Manual Deployment (Backup)
+**Deploy Your Own Instance:**
 
 ```bash
+# 1. Clone
+git clone https://github.com/realriplab/Openclaw-Dasboard.git
+cd Openclaw-Dasboard
+
+# 2. Deploy Worker
 cd worker
 npm install -g wrangler
 wrangler login
 wrangler deploy
+
+# 3. Configure CI/CD
+# Add CLOUDFLARE_API_TOKEN to GitHub Secrets
 ```
 
 ## Project Structure
 
 ```
 .
-├── .github/
-│   └── workflows/
-│       └── deploy.yml       # GitHub Actions CI/CD
-├── worker/                   # Cloudflare Worker
+├── .github/workflows/      # GitHub Actions CI/CD
+│   └── deploy.yml
+├── worker/                 # Cloudflare Worker (Edge API)
 │   ├── src/
 │   │   ├── index.ts
-│   │   ├── durable-objects/AgentState.ts
+│   │   ├── durable-objects/
+│   │   │   └── AgentState.ts    # Real-time state management
 │   │   └── types.ts
 │   ├── wrangler.toml
 │   └── package.json
-├── local-bridge/             # Local status pusher
+├── local-bridge/           # Local agent status pusher
 │   └── bridge.py
-├── web/                      # Astro frontend (WIP)
-└── test-sse.html             # SSE test page
+├── web/                    # Astro frontend (WIP)
+└── test-sse.html           # SSE connection test page
 ```
 
 ## Tech Stack
 
-- **Backend**: Cloudflare Workers + Durable Objects
-- **Real-time**: Server-Sent Events (SSE)
-- **Local Bridge**: Python + aiohttp
-- **Frontend**: Tailwind CSS + Canvas (Astro 6 WIP)
-- **CI/CD**: GitHub Actions
+| Layer | Technology |
+|-------|------------|
+| **Edge API** | Cloudflare Workers + Durable Objects |
+| **Real-time** | Server-Sent Events (SSE) |
+| **Local Bridge** | Python + aiohttp |
+| **Frontend** | Tailwind CSS + Canvas (Astro 6 planned) |
+| **CI/CD** | GitHub Actions |
+| **Domain** | Cloudflare (realrip.com) |
+
+## Configuration
+
+### GitHub Actions Setup
+
+1. Visit: `https://github.com/realriplab/Openclaw-Dasboard/settings/secrets/actions`
+2. Add **New repository secret**:
+   - **Name**: `CLOUDFLARE_API_TOKEN`
+   - **Value**: Your Cloudflare API Token
+
+**Create Cloudflare Token:**
+1. https://dash.cloudflare.com/profile/api-tokens
+2. **Create Token** → **Custom token**
+3. Permissions:
+   - Account: Cloudflare Workers:Edit
+   - Zone: Zone:Read (your domain)
+
+## Roadmap
+
+- [x] Core Worker + Durable Object infrastructure
+- [x] SSE real-time streaming
+- [x] Local bridge agent detection
+- [x] Custom domain deployment
+- [x] GitHub Actions CI/CD
+- [x] English internationalization
+- [ ] Astro frontend dashboard
+- [ ] Cloudflare Access authentication
+- [ ] Multi-team/tenant support
+- [ ] Historical data analytics
 
 ## License
 
-MIT
+MIT © Openclaw Project
