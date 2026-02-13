@@ -1,21 +1,36 @@
 import { AgentStatus, TeamState } from '../types';
+import { HistoryDB } from '../lib/HistoryDB';
 
 export class AgentState {
   private state: DurableObjectState;
+  private env: any;
   private clients: Set<ReadableStreamDefaultController> = new Set();
   private currentState: TeamState = {
     agents: [],
     timestamp: new Date().toISOString(),
     teamId: ''
   };
+  private historyDB: HistoryDB | null = null;
 
   constructor(state: DurableObjectState, env: any) {
     this.state = state;
+    this.env = env;
+    
+    // Initialize D1 if available
+    if (env.DB) {
+      this.historyDB = new HistoryDB(env.DB);
+    }
+    
     // Restore state from storage on startup
     this.state.blockConcurrencyWhile(async () => {
       const stored = await this.state.storage.get<TeamState>('agents');
       if (stored) {
         this.currentState = stored;
+      }
+      
+      // Init D1 tables
+      if (this.historyDB) {
+        await this.historyDB.init();
       }
     });
   }
@@ -69,6 +84,16 @@ export class AgentState {
       
       // Persist to storage
       await this.state.storage.put('agents', this.currentState);
+      
+      // Store history in D1
+      if (this.historyDB && data.agents.length > 0) {
+        try {
+          await this.historyDB.recordStatus(data.teamId, data.agents);
+        } catch (dbError) {
+          console.error('Failed to record history:', dbError);
+          // Don't fail the request if DB fails
+        }
+      }
       
       // Broadcast to all connected clients
       this.broadcast(this.currentState);

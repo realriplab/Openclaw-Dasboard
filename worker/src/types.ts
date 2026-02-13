@@ -1,6 +1,7 @@
 export interface Env {
   AGENT_STATE: DurableObjectNamespace;
   TEAM_CONFIG: KVNamespace;
+  DB: D1Database;
   API_TOKEN: string;
 }
 

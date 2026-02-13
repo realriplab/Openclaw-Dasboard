@@ -1,0 +1,131 @@
+---
+export interface Props {
+  agent: {
+    id: string;
+    name: string;
+    color: string;
+    role: string;
+    status: string;
+  };
+  onClose: () => void;
+}
+
+const { agent, onClose } = Astro.props;
+---
+
+<div class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50" id="agentModal">
+  <div class="bg-[var(--color-bg-secondary)] border border-[var(--color-border-default)] rounded-2xl w-full max-w-md p-6 shadow-2xl animate-fade-in">
+    <!-- Header -->
+    <div class="flex items-start justify-between mb-6">
+      <div class="flex items-center gap-4">
+        <div 
+          class="w-16 h-16 rounded-xl flex items-center justify-center text-2xl font-bold text-white"
+          style={`background: linear-gradient(135deg, ${agent.color}, ${agent.color}dd)`}
+        >
+          {agent.name[0]}
+        </div>
+        <div>
+          <h2 class="text-xl font-bold text-[var(--color-text-primary)]">{agent.name}</h2>
+          <p class="text-sm text-[var(--color-text-muted)]">{agent.role}</p>
+        </div>
+      </div>
+      
+      <button 
+        class="text-[var(--color-text-muted)] hover:text-white transition-colors"
+        onclick="closeModal()"
+      >
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Status -->
+    <div class="mb-6">
+      <div class={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold ${
+        agent.status === 'working' 
+          ? 'bg-green-500/15 text-green-500' 
+          : 'bg-slate-500/15 text-slate-500'
+      }`}>
+        <span class={`w-2 h-2 rounded-full ${agent.status === 'working' ? 'bg-green-500 animate-pulse' : 'bg-slate-500'}`}></span>
+        Currently {agent.status}
+      </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-2 gap-4 mb-6">
+      <div class="bg-[var(--color-bg-primary)] rounded-xl p-4 border border-[var(--color-border-default)]">
+        <p class="text-xs text-[var(--color-text-muted)] uppercase tracking-wider mb-1">Today Active</p>
+        <p class="text-2xl font-bold text-[var(--color-text-primary)]" id="todayActive">--</p>
+      </div>
+      
+      <div class="bg-[var(--color-bg-primary)] rounded-xl p-4 border border-[var(--color-border-default)]">
+        <p class="text-xs text-[var(--color-text-muted)] uppercase tracking-wider mb-1">This Week</p>
+        <p class="text-2xl font-bold text-[var(--color-text-primary)]" id="weekActive">--</p>
+      </div>
+    </div>
+
+    <!-- Workspace Info -->
+    <div class="bg-[var(--color-bg-primary)] rounded-xl p-4 border border-[var(--color-border-default)]">
+      <p class="text-xs text-[var(--color-text-muted)] uppercase tracking-wider mb-2">Workspace</p>
+      <p class="text-sm text-[var(--color-text-secondary)] font-mono break-all" id="workspacePath">
+        /workspace-{agent.id}/
+      </p>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingStats" class="mt-4 text-center text-sm text-[var(--color-text-muted)]">
+      Loading statistics...
+    </div>
+  </div>
+
+  <script define:vars={{ agentId: agent.id }}>
+    // Fetch agent stats from API
+    async function loadStats() {
+      try {
+        const WORKER_URL = 'https://openclaw-dashboard.realriplab.workers.dev';
+        const TEAM_ID = 'yunhe-core';
+        
+        const response = await fetch(`${WORKER_URL}/api/history/${TEAM_ID}/${agentId}?days=7`);
+        if (response.ok) {
+          const data = await response.json();
+          const stats = data.stats;
+          
+          // Update UI
+          document.getElementById('todayActive').textContent = 
+            `${(stats.workingHours / 24 * 100).toFixed(1)}%`;
+          document.getElementById('weekActive').textContent = 
+            `${stats.workingHours.toFixed(1)}h`;
+          document.getElementById('loadingStats').style.display = 'none';
+        }
+      } catch (err) {
+        console.error('Failed to load stats:', err);
+        document.getElementById('loadingStats').textContent = 'Statistics unavailable';
+      }
+    }
+    
+    function closeModal() {
+      const modal = document.getElementById('agentModal');
+      if (modal) {
+        modal.remove();
+      }
+    }
+    
+    // Load stats on mount
+    loadStats();
+    
+    // Close on backdrop click
+    document.getElementById('agentModal').addEventListener('click', (e) => {
+      if (e.target.id === 'agentModal') {
+        closeModal();
+      }
+    });
+    
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+      }
+    });
+  </script>
+</div>

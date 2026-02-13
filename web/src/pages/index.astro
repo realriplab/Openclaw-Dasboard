@@ -80,9 +80,10 @@ const AGENT_CONFIG = [
         
         return (
           <div 
-            class={`agent-card ${isWorking ? 'active' : ''}`}
+            class={`agent-card ${isWorking ? 'active' : ''} cursor-pointer`}
             data-agent-id={agent.id}
             data-status={status}
+            onclick={`showAgentDetail('${agent.id}')`}
           >
             <!-- Avatar -->
             <div 
@@ -199,5 +200,64 @@ const AGENT_CONFIG = [
       office.setAgents(initialData.agents);
       connectSSE();
     });
+    
+    // Global function to show agent details
+    window.showAgentDetail = function(agentId) {
+      const agent = AGENT_CONFIG.find(a => a.id === agentId);
+      if (!agent) return;
+      
+      // Create modal HTML
+      const modal = document.createElement('div');
+      modal.className = 'fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50';
+      modal.id = 'agentDetailModal';
+      modal.innerHTML = `
+        <div class="bg-[var(--color-bg-secondary)] border border-[var(--color-border-default)] rounded-2xl w-full max-w-md p-6 shadow-2xl animate-fade-in">
+          <div class="flex items-start justify-between mb-6">
+            <div class="flex items-center gap-4">
+              <div class="w-16 h-16 rounded-xl flex items-center justify-center text-2xl font-bold text-white" 
+                   style="background: linear-gradient(135deg, ${agent.color}, ${agent.color}dd)">
+                ${agent.name[0]}
+              </div>
+              <div>
+                <h2 class="text-xl font-bold text-[var(--color-text-primary)]">${agent.name}</h2>
+                <p class="text-sm text-[var(--color-text-muted)]">${agent.role}</p>
+              </div>
+            </div>
+            <button onclick="document.getElementById('agentDetailModal').remove()" 
+                    class="text-[var(--color-text-muted)] hover:text-white transition-colors">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+          
+          <div class="bg-[var(--color-bg-primary)] rounded-xl p-4 border border-[var(--color-border-default)]">
+            <p class="text-xs text-[var(--color-text-muted)] uppercase tracking-wider mb-2">Workspace</p>
+            <p class="text-sm text-[var(--color-text-secondary)] font-mono">/workspace-${agent.id}/</p>
+          </div>
+          
+          <div class="mt-4 text-sm text-[var(--color-text-muted)]">
+            <p>Full statistics coming soon...</p>
+          </div>
+        </div>
+      `;
+      
+      // Close on backdrop click
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.remove();
+        }
+      });
+      
+      // Close on Escape key
+      document.addEventListener('keydown', function closeOnEscape(e) {
+        if (e.key === 'Escape') {
+          modal.remove();
+          document.removeEventListener('keydown', closeOnEscape);
+        }
+      });
+      
+      document.body.appendChild(modal);
+    };
   </script>
 </Layout>
