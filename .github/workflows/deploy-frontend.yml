@@ -12,9 +12,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./web
     
     steps:
       - name: Checkout
@@ -31,9 +28,11 @@ jobs:
           version: 8
 
       - name: Install dependencies
+        working-directory: ./web
         run: pnpm install
 
       - name: Build
+        working-directory: ./web
         run: pnpm build
 
       - name: Deploy to Cloudflare Pages
@@ -43,6 +42,5 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: 422d4762169a3d46b47111e3c24159cd
           projectName: openclaw-dashboard
-          directory: dist
-          workingDirectory: web
+          directory: web/dist
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
