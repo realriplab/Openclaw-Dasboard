@@ -45,7 +45,7 @@ Real-time visualization dashboard for OpenClaw multi-agent systems. Monitor your
                               ▼ Browser
 ┌─────────────────────────────────────────────────────────────────┐
 │                     You (Any Device)                            │
-│         https://dashboard.openclaw.realrip.com                  │
+│              https://your-domain.pages.dev                      │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -57,13 +57,13 @@ Just want to monitor your agents?
 
 1. **Install the bridge service** (one-time setup):
 ```bash
-cd ~/.openclaw/workspace-coder/ai-office-saas/local-bridge
+cd local-bridge
 ./install-service.sh
 ```
 
 2. **Access your dashboard**:
 ```
-https://dashboard.openclaw.realrip.com
+https://your-domain.pages.dev
 ```
 
 3. **Login with PIN**:
@@ -202,7 +202,7 @@ curl https://your-worker.workers.dev/api/agents/yunhe-core
 Response:
 ```json
 {
-  "teamId": "yunhe-core",
+  "teamId": "default",
   "agents": [
     {
       "id": "coder",
@@ -219,7 +219,7 @@ Response:
 
 ### Report Status (Bridge)
 ```bash
-curl -X POST https://your-worker.workers.dev/api/report/yunhe-core \
+curl -X POST https://your-worker.workers.dev/api/report/default \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"agents": [...], "timestamp": "..."}'
@@ -228,10 +228,10 @@ curl -X POST https://your-worker.workers.dev/api/report/yunhe-core \
 ### Get History
 ```bash
 # Last 24 hours
-curl https://your-worker.workers.dev/api/history/yunhe-core
+curl https://your-worker.workers.dev/api/history/default
 
 # Agent stats (7 days)
-curl https://your-worker.workers.dev/api/history/yunhe-core/coder?days=7
+curl https://your-worker.workers.dev/api/history/default/coder?days=7
 ```
 
 ## ⚙️ Configuration
@@ -242,7 +242,7 @@ curl https://your-worker.workers.dev/api/history/yunhe-core/coder?days=7
 |----------|---------|-------------|
 | `WORKER_URL` | - | Cloudflare Worker URL |
 | `API_TOKEN` | - | Authentication token |
-| `TEAM_ID` | `yunhe-core` | Team identifier |
+| `TEAM_ID` | `default` | Team identifier |
 | `PUSH_INTERVAL` | `5` | Seconds between pushes |
 
 ### wrangler.toml

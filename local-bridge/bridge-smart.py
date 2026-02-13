@@ -16,8 +16,8 @@ from datetime import datetime, timezone
 from typing import Dict, List, Any
 
 # Configuration
-TEAM_ID = os.getenv("TEAM_ID", "yunhe-core")
-WORKER_URL = os.getenv("WORKER_URL", "https://openclaw-dashboard.realriplab.workers.dev")
+TEAM_ID = os.getenv("TEAM_ID", "default")
+WORKER_URL = os.getenv("WORKER_URL", "https://your-worker.your-account.workers.dev")
 API_TOKEN = os.getenv("API_TOKEN", "yunhe-2024-offline")
 PUSH_INTERVAL = int(os.getenv("PUSH_INTERVAL", "5"))
 GATEWAY_PORT = 18789  # OpenClaw gateway port

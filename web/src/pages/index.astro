@@ -7,13 +7,13 @@ const WORKER_URL = 'https://openclaw-dashboard.realriplab.workers.dev';
 
 // Get team from URL param or default
 const url = new URL(Astro.request.url);
-const TEAM_ID = url.searchParams.get('team') || 'yunhe-core';
+const TEAM_ID = url.searchParams.get('team') || 'default';
 
-// Available teams
+// Available teams - customize for your organization
 const TEAMS = [
-  { id: 'yunhe-core', name: 'YunHe Core', description: 'Main development team' },
-  { id: 'team-alpha', name: 'Team Alpha', description: 'Alpha testing team' },
-  { id: 'team-beta', name: 'Team Beta', description: 'Beta testing team' }
+  { id: 'default', name: 'Default Team', description: 'Your team' },
+  { id: 'team-1', name: 'Team 1', description: 'First team' },
+  { id: 'team-2', name: 'Team 2', description: 'Second team' }
 ];
 
 const currentTeam = TEAMS.find(t => t.id === TEAM_ID) || TEAMS[0];
