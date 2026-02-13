@@ -1,20 +1,22 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
-@layer base {
-  body {
-    @apply bg-slate-950 text-slate-200 font-sans antialiased;
-  }
+@theme {
+  --color-slate-750: #1e293b;
+  --color-slate-850: #0f172a;
+  --color-slate-950: #020617;
 }
 
-@layer utilities {
-  .animate-pulse-ring {
-    animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  }
+body {
+  background-color: #0f172a;
+  color: #e2e8f0;
+  font-family: 'Inter', system-ui, sans-serif;
 }
 
 @keyframes pulse-ring {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
+}
+
+.animate-pulse-ring {
+  animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
