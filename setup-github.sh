@@ -1,5 +1,5 @@
 #!/bin/bash
-# Setup GitHub repo for Openclaw-Dasboard
+# Setup GitHub repository for Openclaw-Dasboard
 
 echo "Setting up GitHub repository..."
 

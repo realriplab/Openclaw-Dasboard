@@ -1,26 +1,26 @@
 # Openclaw Dashboard
 
-AI Agent 实时状态仪表盘 - 多租户 SaaS 解决方案
+Real-time AI Agent status dashboard - Multi-tenant SaaS solution
 
-## 架构
+## Architecture
 
 ```
 ┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│   本地机器       │────▶│  Cloudflare      │◀────│   浏览器客户端   │
-│  (Agent 状态)   │     │  Worker + DO     │     │  (实时仪表盘)   │
+│  Local Machine  │────▶│  Cloudflare      │◀────│  Browser Client │
+│  (Agent Status) │     │  Worker + DO     │     │  (Live Dashboard)│
 └─────────────────┘     └──────────────────┘     └─────────────────┘
        bridge.py              Durable Object           SSE Stream
 ```
 
-## 在线地址
+## Live URL
 
-- **仪表盘**: `https://openclaw.realrip.com`
-- **API 端点**: `https://openclaw.realrip.com/api/agents/:teamId`
-- **SSE 流**: `https://openclaw.realrip.com/api/sse/:teamId`
+- **Dashboard**: `https://openclaw.realrip.com`
+- **API Endpoint**: `https://openclaw.realrip.com/api/agents/:teamId`
+- **SSE Stream**: `https://openclaw.realrip.com/api/sse/:teamId`
 
-## 快速开始
+## Quick Start
 
-### 1. 本地推送桥
+### 1. Local Bridge
 
 ```bash
 cd local-bridge
@@ -30,29 +30,29 @@ export API_TOKEN="your-token"
 python3 bridge.py
 ```
 
-### 2. Worker 部署（自动 CI/CD）
+### 2. Worker Deployment (Auto CI/CD)
 
-已配置 GitHub Actions，推送 `main` 分支自动部署：
+GitHub Actions configured. Push to `main` branch auto-deploys:
 
 ```bash
 git push origin main
 ```
 
-**设置 GitHub Secrets：**
+**Setup GitHub Secrets:**
 
-1. 访问: `https://github.com/realriplab/Openclaw-Dasboard/settings/secrets/actions`
-2. 点击 **New repository secret**
+1. Visit: `https://github.com/realriplab/Openclaw-Dasboard/settings/secrets/actions`
+2. Click **New repository secret**
 3. Name: `CLOUDFLARE_API_TOKEN`
-4. Value: [你的 Cloudflare API Token]
+4. Value: [Your Cloudflare API Token]
 
-**创建 Token 步骤：**
+**Create Token:**
 1. https://dash.cloudflare.com/profile/api-tokens
 2. Create Token → Custom token
-3. 权限:
+3. Permissions:
    - Account: Cloudflare Workers:Edit
-   - Zone: Zone:Read (选 realrip.com)
+   - Zone: Zone:Read (select realrip.com)
 
-### 3. 手动部署（备用）
+### 3. Manual Deployment (Backup)
 
 ```bash
 cd worker
@@ -61,32 +61,32 @@ wrangler login
 wrangler deploy
 ```
 
-## 项目结构
+## Project Structure
 
 ```
 .
 ├── .github/
 │   └── workflows/
-│       └── deploy.yml     # GitHub Actions CI/CD
-├── worker/                # Cloudflare Worker
+│       └── deploy.yml       # GitHub Actions CI/CD
+├── worker/                   # Cloudflare Worker
 │   ├── src/
 │   │   ├── index.ts
 │   │   ├── durable-objects/AgentState.ts
 │   │   └── types.ts
 │   ├── wrangler.toml
 │   └── package.json
-├── local-bridge/          # 本地状态推送
+├── local-bridge/             # Local status pusher
 │   └── bridge.py
-├── web/                   # Astro 前端 (待开发)
-└── test-sse.html          # SSE 测试页面
+├── web/                      # Astro frontend (WIP)
+└── test-sse.html             # SSE test page
 ```
 
-## 技术栈
+## Tech Stack
 
-- **后端**: Cloudflare Workers + Durable Objects
-- **实时通信**: Server-Sent Events (SSE)
-- **本地桥接**: Python + aiohttp
-- **前端**: Tailwind CSS + Canvas (Astro 6 开发中)
+- **Backend**: Cloudflare Workers + Durable Objects
+- **Real-time**: Server-Sent Events (SSE)
+- **Local Bridge**: Python + aiohttp
+- **Frontend**: Tailwind CSS + Canvas (Astro 6 WIP)
 - **CI/CD**: GitHub Actions
 
 ## License

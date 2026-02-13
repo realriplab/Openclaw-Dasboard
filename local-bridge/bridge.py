@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-AI Office Local Bridge
+Openclaw Dashboard - Local Bridge
 Pushes agent status from local machine to Cloudflare Worker
 """
 
@@ -93,25 +93,25 @@ async def push_status(session: aiohttp.ClientSession) -> bool:
             if resp.status == 200:
                 data = await resp.json()
                 working = len([a for a in status["agents"] if a["status"] == "working"])
-                print(f"[{datetime.now().strftime('%H:%M:%S')}] ✓ Pushed {working}/{len(AGENTS)} agents working")
+                print(f"[{datetime.now().strftime('%H:%M:%S')}] Pushed {working}/{len(AGENTS)} agents working")
                 return True
             else:
                 text = await resp.text()
-                print(f"[{datetime.now().strftime('%H:%M:%S')}] ✗ Failed: HTTP {resp.status} - {text}")
+                print(f"[{datetime.now().strftime('%H:%M:%S')}] Failed: HTTP {resp.status} - {text}")
                 return False
                 
     except aiohttp.ClientError as e:
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] ✗ Connection error: {e}")
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] Connection error: {e}")
         return False
     except Exception as e:
-        print(f"[{datetime.now().strftime('%H:%M:%S')}] ✗ Error: {e}")
+        print(f"[{datetime.now().strftime('%H:%M:%S')}] Error: {e}")
         return False
 
 
 async def main():
     """Main loop - push status every PUSH_INTERVAL seconds"""
     print("=" * 60)
-    print("AI Office Local Bridge")
+    print("Openclaw Dashboard - Local Bridge")
     print("=" * 60)
     print(f"Team ID: {TEAM_ID}")
     print(f"Worker URL: {WORKER_URL}")
@@ -124,7 +124,7 @@ async def main():
     initial = get_local_agent_status()
     print("Initial status:")
     for agent in initial["agents"]:
-        emoji = "🟢" if agent["status"] == "working" else "⚪"
+        emoji = "Working" if agent["status"] == "working" else "Idle"
         print(f"  {emoji} {agent['name']}: {agent['status']}")
     print("")
     
