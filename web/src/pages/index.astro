@@ -231,6 +231,11 @@ const AGENT_CONFIG = [
             </button>
           </div>
           
+          <div class="bg-[var(--color-bg-primary)] rounded-xl p-4 border border-[var(--color-border-default)] mb-4">
+            <p class="text-xs text-[var(--color-text-muted)] uppercase tracking-wider mb-2">24h Activity</p>
+            <div id="historyChart-${agent.id}" class="h-24 flex items-end gap-1"></div>
+          </div>
+          
           <div class="bg-[var(--color-bg-primary)] rounded-xl p-4 border border-[var(--color-border-default)]">
             <p class="text-xs text-[var(--color-text-muted)] uppercase tracking-wider mb-2">Workspace</p>
             <p class="text-sm text-[var(--color-text-secondary)] font-mono">/workspace-${agent.id}/</p>
@@ -258,6 +263,61 @@ const AGENT_CONFIG = [
       });
       
       document.body.appendChild(modal);
+      
+      // Load and render history chart
+      loadHistoryChart(agent.id, agent.color);
     };
+    
+    async function loadHistoryChart(agentId, agentColor) {
+      try {
+        const WORKER_URL = 'https://openclaw-dashboard.realriplab.workers.dev';
+        const TEAM_ID = 'yunhe-core';
+        
+        const response = await fetch(`${WORKER_URL}/api/history/${TEAM_ID}?hours=24`);
+        if (!response.ok) return;
+        
+        const data = await response.json();
+        const records = (data.records || []).filter(r => r.agent_id === agentId);
+        
+        // Group by hour
+        const hourlyData = new Array(24).fill(0).map((_, i) => ({ hour: i, working: 0, total: 0 }));
+        
+        records.forEach(record => {
+          const date = new Date(record.timestamp);
+          const hour = date.getHours();
+          if (hourlyData[hour]) {
+            hourlyData[hour].total++;
+            if (record.status === 'working') hourlyData[hour].working++;
+          }
+        });
+        
+        // Calculate percentages
+        const chartData = hourlyData.map(d => ({
+          hour: d.hour,
+          percentage: d.total > 0 ? Math.round((d.working / d.total) * 100) : 0
+        }));
+        
+        const maxPercentage = Math.max(...chartData.map(d => d.percentage), 1);
+        
+        // Render chart
+        const container = document.getElementById(`historyChart-${agentId}`);
+        if (!container) return;
+        
+        container.innerHTML = chartData.map((d, i) => `
+          <div class="flex-1 flex flex-col items-center gap-1">
+            <div class="w-full rounded-t transition-all duration-300 hover:opacity-80 relative group"
+                 style="height: ${(d.percentage / maxPercentage) * 100}%; background-color: ${d.percentage > 50 ? agentColor : '#64748b'}; min-height: ${d.percentage > 0 ? '4px' : '0'};">
+              <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 bg-black/80 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                ${d.hour}:00 - ${d.percentage}% active
+              </div>
+            </div>
+            ${i % 4 === 0 ? `<span class="text-[10px] text-[var(--color-text-muted)]">${d.hour}h</span>` : ''}
+          </div>
+        `).join('');
+        
+      } catch (err) {
+        console.error('Failed to load history:', err);
+      }
+    }
   </script>
 </Layout>

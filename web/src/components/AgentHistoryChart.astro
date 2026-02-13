@@ -1,0 +1,83 @@
+---
+// AgentHistoryChart.astro - Show agent activity over time
+
+interface Props {
+  agentId: string;
+  agentName: string;
+  agentColor: string;
+}
+
+const { agentId, agentName, agentColor } = Astro.props;
+const WORKER_URL = 'https://openclaw-dashboard.realriplab.workers.dev';
+const TEAM_ID = 'yunhe-core';
+
+// Fetch 24h history on server
+let historyData: any[] = [];
+try {
+  const response = await fetch(`${WORKER_URL}/api/history/${TEAM_ID}?hours=24`);
+  if (response.ok) {
+    const data = await response.json();
+    // Filter for this agent
+    historyData = (data.records || []).filter((r: any) => r.agent_id === agentId);
+  }
+} catch (e) {
+  console.error('Failed to fetch history:', e);
+}
+
+// Process data into hourly buckets
+const hourlyData = new Array(24).fill(0).map((_, i) => ({
+  hour: i,
+  working: 0,
+  total: 0
+}));
+
+historyData.forEach((record: any) => {
+  const date = new Date(record.timestamp);
+  const hour = date.getHours();
+  if (hourlyData[hour]) {
+    hourlyData[hour].total++;
+    if (record.status === 'working') {
+      hourlyData[hour].working++;
+    }
+  }
+});
+
+// Calculate percentages
+const chartData = hourlyData.map(d => ({
+  hour: d.hour,
+  percentage: d.total > 0 ? Math.round((d.working / d.total) * 100) : 0
+}));
+
+const maxPercentage = Math.max(...chartData.map(d => d.percentage), 1);
+---
+
+<div class="bg-[var(--color-bg-primary)] rounded-xl p-4 border border-[var(--color-border-default)]">
+  <div class="flex items-center justify-between mb-4">
+    <h3 class="font-semibold text-[var(--color-text-primary)]">24h Activity</h3>
+    <span class="text-xs text-[var(--color-text-muted)]">{agentName}</span>
+  </div>
+
+  <div class="relative h-32 flex items-end gap-1">
+    {chartData.map((d, i) => (
+      <div class="flex-1 flex flex-col items-center gap-1">
+        <div 
+          class="w-full rounded-t transition-all duration-300 hover:opacity-80"
+          style={`
+            height: ${(d.percentage / maxPercentage) * 100}%;
+            background-color: ${d.percentage > 50 ? agentColor : '#64748b'};
+            min-height: ${d.percentage > 0 ? '4px' : '0'};
+          `}
+          title={`${d.hour}:00 - ${d.percentage}% active`}
+        />
+        {i % 4 === 0 && (
+          <span class="text-[10px] text-[var(--color-text-muted)]">{d.hour}h</span>
+        )}
+      </div>
+    ))}
+  </div>
+
+  <div class="mt-4 flex items-center justify-between text-xs text-[var(--color-text-muted)]">
+    <span>Average: {Math.round(chartData.reduce((a, b) => a + b.percentage, 0) / 24)}% active</span>
+    <span>Peak: {maxPercentage}%</span>
+  </div>
+</div>
