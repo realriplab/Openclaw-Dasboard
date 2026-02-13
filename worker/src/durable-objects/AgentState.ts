@@ -1,5 +1,6 @@
 import { AgentStatus, TeamState } from '../types';
 import { HistoryDB } from '../lib/HistoryDB';
+import { NotificationService } from '../lib/NotificationService';
 
 export class AgentState {
   private state: DurableObjectState;
@@ -11,6 +12,7 @@ export class AgentState {
     teamId: ''
   };
   private historyDB: HistoryDB | null = null;
+  private notificationService: NotificationService | null = null;
 
   constructor(state: DurableObjectState, env: any) {
     this.state = state;
@@ -19,6 +21,9 @@ export class AgentState {
     // Initialize D1 if available
     if (env.DB) {
       this.historyDB = new HistoryDB(env.DB);
+      this.notificationService = new NotificationService(env.DB, {
+        offlineThresholdMinutes: 10 // Notify after 10 minutes idle
+      });
     }
     
     // Restore state from storage on startup
@@ -31,6 +36,9 @@ export class AgentState {
       // Init D1 tables
       if (this.historyDB) {
         await this.historyDB.init();
+      }
+      if (this.notificationService) {
+        await this.notificationService.init();
       }
     });
   }
@@ -91,7 +99,15 @@ export class AgentState {
           await this.historyDB.recordStatus(data.teamId, data.agents);
         } catch (dbError) {
           console.error('Failed to record history:', dbError);
-          // Don't fail the request if DB fails
+        }
+      }
+      
+      // Check for offline notifications
+      if (this.notificationService && data.agents.length > 0) {
+        try {
+          await this.notificationService.checkAndNotify(data.teamId, data.agents);
+        } catch (notifError) {
+          console.error('Failed to check notifications:', notifError);
         }
       }
       
