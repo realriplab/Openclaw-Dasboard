@@ -376,10 +376,10 @@ launchctl start com.openclaw.dashboard.bridge
 - [x] Cloudflare Access protection
 - [x] GitHub Actions CI/CD
 - [x] Smart bridge with auto-detection
-- [ ] History charts & graphs
-- [ ] Offline notifications
-- [ ] Multi-team support
-- [ ] Mobile app
+- [x] History charts & graphs
+- [x] Offline notifications
+- [x] Multi-team support
+- [x] Mobile responsive
 
 ## 🤝 Contributing
 
