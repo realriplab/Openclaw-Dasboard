@@ -1,0 +1,14 @@
+name = "openclaw-dashboard"
+main = "src/index.ts"
+compatibility_date = "2025-02-13"
+account_id = "422d4762169a3d46b47111e3c24159cd"
+
+# Durable Object migrations
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["AgentState"]
+
+# Durable Object binding
+[[durable_objects.bindings]]
+name = "AGENT_STATE"
+class_name = "AgentState"
