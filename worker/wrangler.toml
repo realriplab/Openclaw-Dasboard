@@ -6,7 +6,7 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "openclaw-history"
-database_id = "your-database-id-here"
+database_id = "30ad4689-e4db-477f-9e02-4f20081224ee"
 
 # Durable Object binding
 [[durable_objects.bindings]]
