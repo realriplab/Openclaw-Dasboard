@@ -1,23 +1,16 @@
-// OfficeVisualization.js - Complete office scene renderer
+// OfficeVisualization.js - Simplified office scene renderer
 
 export class OfficeVisualization {
   constructor(canvas) {
     this.canvas = canvas;
     this.ctx = canvas.getContext('2d');
     this.agents = [];
-    this.animationFrame = null;
-    this.scale = 1;
-    this.offsetX = 0;
-    this.offsetY = 0;
-    this.isDragging = false;
-    this.lastTouchX = 0;
-    this.lastTouchY = 0;
-    this.dpr = window.devicePixelRatio || 1;
     
-    // Setup touch events for mobile
-    this.setupTouchEvents();
+    // Fixed design resolution
+    this.designWidth = 1200;
+    this.designHeight = 700;
     
-    // Office layout (design for 1200x700 coordinate space)
+    // Office layout
     this.ROOMS = {
       warRoom: { x: 50, y: 40, w: 220, h: 160, name: 'War Room', color: '#6366f1' },
       founderOffice: { x: 290, y: 40, w: 220, h: 160, name: 'Founder Office', color: '#8b5cf6' },
@@ -42,35 +35,6 @@ export class OfficeVisualization {
       coach: { name: 'Coach', color: '#10b981', initial: 'C' },
       main: { name: 'Main', color: '#06b6d4', initial: 'M' }
     };
-    
-    // Set canvas size based on container
-    this.resize();
-  }
-  
-  resize() {
-    const canvas = this.canvas;
-    const container = canvas.parentElement;
-    if (!container) return;
-    
-    // Get container dimensions
-    const containerWidth = container.clientWidth;
-    const containerHeight = container.clientHeight || containerWidth * 0.58; // maintain aspect ratio
-    
-    // Set canvas internal resolution (design resolution: 1200x700)
-    const designWidth = 1200;
-    const designHeight = 700;
-    
-    canvas.width = designWidth * this.dpr;
-    canvas.height = designHeight * this.dpr;
-    
-    // Set display size via CSS
-    canvas.style.width = `${containerWidth}px`;
-    canvas.style.height = `${(containerWidth * designHeight / designWidth)}px`;
-    
-    // Scale context for DPR
-    this.ctx.scale(this.dpr, this.dpr);
-    
-    this.render();
   }
   
   setAgents(agents) {
@@ -79,38 +43,41 @@ export class OfficeVisualization {
   }
   
   render() {
-    const ctx = this.ctx;
     const canvas = this.canvas;
+    const ctx = this.ctx;
     
-    // Reset transform and clear
+    // Ensure canvas has proper display size
+    const container = canvas.parentElement;
+    if (!container) {
+      console.error('Canvas has no parent container');
+      return;
+    }
+    
+    const displayWidth = container.clientWidth;
+    const displayHeight = container.clientHeight || Math.round(displayWidth * 0.58);
+    
+    // Set internal resolution (HiDPI support)
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = this.designWidth * dpr;
+    canvas.height = this.designHeight * dpr;
+    
+    // Set display size via CSS
+    canvas.style.width = displayWidth + 'px';
+    canvas.style.height = displayHeight + 'px';
+    
+    // Scale context to match DPR
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.scale(dpr, dpr);
     
-    // Re-apply DPR scale
-    ctx.scale(this.dpr, this.dpr);
-    
-    // Clear canvas with background
+    // Clear with background
     ctx.fillStyle = '#0f172a';
-    ctx.fillRect(0, 0, 1200, 700);
+    ctx.fillRect(0, 0, this.designWidth, this.designHeight);
     
-    // Draw floor grid
+    // Draw scene
     this.drawFloor();
-    
-    // Draw rooms
-    this.drawRoom(this.ROOMS.warRoom);
-    this.drawRoom(this.ROOMS.founderOffice);
-    this.drawRoom(this.ROOMS.breakRoom);
-    this.drawRoom(this.ROOMS.lounge);
-    
-    // Draw cubicles
-    this.CUBICLES.forEach(cubicle => {
-      this.drawCubicle(cubicle);
-    });
-    
-    // Draw lounge furniture
+    this.drawRooms();
+    this.drawCubicles();
     this.drawLounge();
-    
-    // Draw corridor
     this.drawCorridor();
   }
   
@@ -118,8 +85,8 @@ export class OfficeVisualization {
     const ctx = this.ctx;
     const tileSize = 40;
     
-    for (let y = 0; y < 700; y += tileSize) {
-      for (let x = 0; x < 1200; x += tileSize) {
+    for (let y = 0; y < this.designHeight; y += tileSize) {
+      for (let x = 0; x < this.designWidth; x += tileSize) {
         const isEven = ((x / tileSize) + (y / tileSize)) % 2 === 0;
         ctx.fillStyle = isEven ? '#0a1929' : '#0d1f33';
         ctx.fillRect(x, y, tileSize, tileSize);
@@ -127,102 +94,36 @@ export class OfficeVisualization {
     }
   }
   
+  drawRooms() {
+    Object.values(this.ROOMS).forEach(room => this.drawRoom(room));
+  }
+  
   drawRoom(room) {
     const ctx = this.ctx;
     
-    // Room background
+    // Background
     ctx.fillStyle = '#1e293b';
     ctx.fillRect(room.x + 4, room.y + 4, room.w - 8, room.h - 8);
     
-    // Room border with accent color
+    // Border
     ctx.strokeStyle = room.color;
     ctx.lineWidth = 2;
     ctx.strokeRect(room.x, room.y, room.w, room.h);
     
-    // Glass effect overlay
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
-    ctx.fillRect(room.x + 4, room.y + 4, room.w - 8, room.h - 8);
-    
     // Label
     ctx.fillStyle = '#94a3b8';
-    ctx.font = '500 11px Inter, sans-serif';
+    ctx.font = '500 11px sans-serif';
     ctx.fillText(room.name, room.x + 12, room.y - 8);
     
-    // Status indicator
+    // Status dot
     ctx.fillStyle = room.color;
     ctx.beginPath();
     ctx.arc(room.x + room.w - 12, room.y - 12, 4, 0, Math.PI * 2);
     ctx.fill();
-    
-    // Room-specific furniture
-    if (room.name === 'War Room') {
-      this.drawConferenceTable(room);
-    } else if (room.name === 'Founder Office') {
-      this.drawExecutiveDesk(room);
-    } else if (room.name === 'Break Room') {
-      this.drawKitchenArea(room);
-    }
   }
   
-  drawConferenceTable(room) {
-    const ctx = this.ctx;
-    const cx = room.x + room.w / 2;
-    const cy = room.y + room.h / 2;
-    
-    // Round table
-    ctx.fillStyle = '#475569';
-    ctx.beginPath();
-    ctx.arc(cx, cy, 40, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Chairs
-    ctx.fillStyle = '#334155';
-    for (let i = 0; i < 6; i++) {
-      const angle = (i / 6) * Math.PI * 2;
-      const chairX = cx + Math.cos(angle) * 55;
-      const chairY = cy + Math.sin(angle) * 55;
-      ctx.fillRect(chairX - 8, chairY - 8, 16, 16);
-    }
-  }
-  
-  drawExecutiveDesk(room) {
-    const ctx = this.ctx;
-    const cx = room.x + room.w / 2;
-    const cy = room.y + room.h / 2;
-    
-    // Large desk
-    ctx.fillStyle = '#475569';
-    ctx.fillRect(cx - 60, cy - 30, 120, 60);
-    
-    // Chair
-    ctx.fillStyle = '#334155';
-    ctx.fillRect(cx - 20, cy + 40, 40, 30);
-    
-    // Bookshelf
-    ctx.fillStyle = '#334155';
-    ctx.fillRect(room.x + 10, room.y + 40, 30, 100);
-    
-    // Books
-    for (let i = 0; i < 4; i++) {
-      ctx.fillStyle = ['#ef4444', '#3b82f6', '#22c55e', '#f59e0b'][i];
-      ctx.fillRect(room.x + 12, room.y + 45 + i * 22, 26, 18);
-    }
-  }
-  
-  drawKitchenArea(room) {
-    const ctx = this.ctx;
-    
-    // Counter
-    ctx.fillStyle = '#475569';
-    ctx.fillRect(room.x + 20, room.y + 100, 180, 40);
-    
-    // Fridge
-    ctx.fillStyle = '#64748b';
-    ctx.fillRect(room.x + 150, room.y + 20, 50, 70);
-    
-    // Coffee machine
-    ctx.fillStyle = '#334155';
-    ctx.fillRect(room.x + 20, room.y + 60, 25, 30);
+  drawCubicles() {
+    this.CUBICLES.forEach(cubicle => this.drawCubicle(cubicle));
   }
   
   drawCubicle(cubicle) {
@@ -231,7 +132,7 @@ export class OfficeVisualization {
     const agentStatus = this.agents.find(a => a.id === cubicle.agentId)?.status || 'idle';
     const isWorking = agentStatus === 'working';
     
-    // Cubicle walls
+    // Walls
     ctx.fillStyle = '#334155';
     ctx.fillRect(cubicle.x, cubicle.y, 180, 5);
     ctx.fillRect(cubicle.x, cubicle.y, 5, 130);
@@ -269,7 +170,7 @@ export class OfficeVisualization {
       
       // Initial
       ctx.fillStyle = '#fff';
-      ctx.font = 'bold 12px Inter, sans-serif';
+      ctx.font = 'bold 12px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(agent.initial, cubicle.x + 100, cubicle.y + 70);
@@ -294,11 +195,8 @@ export class OfficeVisualization {
     
     // Sofas
     ctx.fillStyle = '#475569';
-    // Top sofa
     ctx.fillRect(room.x + 30, room.y + 40, 200, 60);
-    // Bottom sofa
     ctx.fillRect(room.x + 30, room.y + 300, 200, 60);
-    // Left sofa
     ctx.fillRect(room.x + 30, room.y + 120, 60, 160);
     
     // Coffee table
@@ -308,10 +206,6 @@ export class OfficeVisualization {
     // TV
     ctx.fillStyle = '#0f172a';
     ctx.fillRect(room.x + 180, room.y + 140, 10, 120);
-    
-    // TV stand
-    ctx.fillStyle = '#334155';
-    ctx.fillRect(room.x + 170, room.y + 260, 30, 10);
   }
   
   drawCorridor() {
@@ -353,69 +247,5 @@ export class OfficeVisualization {
     ctx.beginPath();
     ctx.arc(x + 10, y - 15, 12, 0, Math.PI * 2);
     ctx.fill();
-  }
-  
-  setupTouchEvents() {
-    // Touch events for mobile pan and zoom
-    this.canvas.addEventListener('touchstart', (e) => {
-      if (e.touches.length === 1) {
-        this.isDragging = true;
-        this.lastTouchX = e.touches[0].clientX;
-        this.lastTouchY = e.touches[0].clientY;
-      }
-    }, { passive: true });
-    
-    this.canvas.addEventListener('touchmove', (e) => {
-      if (this.isDragging && e.touches.length === 1) {
-        const deltaX = e.touches[0].clientX - this.lastTouchX;
-        const deltaY = e.touches[0].clientY - this.lastTouchY;
-        
-        this.offsetX += deltaX;
-        this.offsetY += deltaY;
-        
-        this.lastTouchX = e.touches[0].clientX;
-        this.lastTouchY = e.touches[0].clientY;
-        
-        this.render();
-      }
-    }, { passive: true });
-    
-    this.canvas.addEventListener('touchend', () => {
-      this.isDragging = false;
-    }, { passive: true });
-    
-    // Pinch to zoom
-    this.canvas.addEventListener('touchstart', (e) => {
-      if (e.touches.length === 2) {
-        const dx = e.touches[0].clientX - e.touches[1].clientX;
-        const dy = e.touches[0].clientY - e.touches[1].clientY;
-        this.lastPinchDistance = Math.sqrt(dx * dx + dy * dy);
-      }
-    }, { passive: true });
-    
-    this.canvas.addEventListener('touchmove', (e) => {
-      if (e.touches.length === 2 && this.lastPinchDistance) {
-        const dx = e.touches[0].clientX - e.touches[1].clientX;
-        const dy = e.touches[0].clientY - e.touches[1].clientY;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        
-        const scaleChange = distance / this.lastPinchDistance;
-        this.scale = Math.max(0.5, Math.min(3, this.scale * scaleChange));
-        this.lastPinchDistance = distance;
-        
-        this.render();
-      }
-    }, { passive: true });
-    
-    // Handle window resize
-    window.addEventListener('resize', () => {
-      this.resize();
-    });
-  }
-  
-  destroy() {
-    if (this.animationFrame) {
-      cancelAnimationFrame(this.animationFrame);
-    }
   }
 }
