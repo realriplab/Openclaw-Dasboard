@@ -144,12 +144,9 @@ const AGENT_CONFIG = [
 
   <script define:vars={{ initialData, WORKER_URL, TEAM_ID, AGENT_CONFIG }}>
     import('/src/lib/OfficeVisualization.js').then(({ OfficeVisualization }) => {
-      console.log('OfficeVisualization loaded');
       const canvas = document.getElementById('officeCanvas');
-      console.log('Canvas element:', canvas);
       
       const office = new OfficeVisualization(canvas);
-      console.log('OfficeVisualization created');
       
       let eventSource = null;
       let reconnectAttempts = 0;
@@ -160,18 +157,15 @@ const AGENT_CONFIG = [
         const teamId = urlParams.get('team') || 'default';
         
         const url = `${WORKER_URL}/api/sse/${teamId}`;
-        console.log('Connecting SSE to:', url);
         
         eventSource = new EventSource(url);
         
         eventSource.onopen = () => {
-          console.log('SSE connected');
           updateConnection(true);
           reconnectAttempts = 0;
         };
         
         eventSource.onmessage = (event) => {
-          console.log('SSE message received:', event.data.substring(0, 100));
           try {
             const data = JSON.parse(event.data);
             updateDashboard(data);
@@ -235,11 +229,9 @@ const AGENT_CONFIG = [
         });
       }
 
-      console.log('Initial data:', initialData);
       
       // Initialize
       office.setAgents(initialData.agents);
-      console.log('Initial agents set');
       
       connectSSE();
     });

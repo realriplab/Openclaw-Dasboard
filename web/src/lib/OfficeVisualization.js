@@ -43,7 +43,6 @@ export class OfficeVisualization {
   }
   
   render() {
-    console.log('Canvas render called, agents:', this.agents.length);
     
     const canvas = this.canvas;
     const ctx = this.ctx;
@@ -60,7 +59,6 @@ export class OfficeVisualization {
       return;
     }
     
-    console.log('Container size:', container.clientWidth, container.clientHeight);
     
     const displayWidth = container.clientWidth;
     const displayHeight = container.clientHeight || Math.round(displayWidth * 0.58);
@@ -74,8 +72,6 @@ export class OfficeVisualization {
     canvas.style.width = displayWidth + 'px';
     canvas.style.height = displayHeight + 'px';
     
-    console.log('Canvas internal size:', canvas.width, canvas.height);
-    console.log('Canvas display size:', canvas.style.width, canvas.style.height);
     
     // Scale context to match DPR
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -85,7 +81,6 @@ export class OfficeVisualization {
     ctx.fillStyle = '#0f172a';
     ctx.fillRect(0, 0, this.designWidth, this.designHeight);
     
-    console.log('Drawing scene...');
     
     // Draw scene
     this.drawFloor();
@@ -94,7 +89,6 @@ export class OfficeVisualization {
     this.drawLounge();
     this.drawCorridor();
     
-    console.log('Render complete');
   }
   
   drawFloor() {
