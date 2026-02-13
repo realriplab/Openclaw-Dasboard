@@ -116,143 +116,88 @@ const AGENT_CONFIG = [
   </footer>
 
   <script define:vars={{ initialData, WORKER_URL, TEAM_ID, AGENT_CONFIG }}>
-    // Canvas and SSE Logic
-    const canvas = document.getElementById('officeCanvas');
-    const ctx = canvas?.getContext('2d');
-    let eventSource = null;
-    let reconnectAttempts = 0;
+    import('../lib/OfficeVisualization.js').then(({ OfficeVisualization }) => {
+      const canvas = document.getElementById('officeCanvas');
+      const office = new OfficeVisualization(canvas);
+      
+      let eventSource = null;
+      let reconnectAttempts = 0;
 
-    // Agent positions on canvas
-    const POSITIONS = [
-      { x: 150, y: 250 }, { x: 400, y: 250 }, { x: 650, y: 250 },
-      { x: 150, y: 450 }, { x: 400, y: 450 }, { x: 650, y: 450 }
-    ];
-
-    function connectSSE() {
-      const url = `${WORKER_URL}/api/sse/${TEAM_ID}`;
-      eventSource = new EventSource(url);
-      
-      eventSource.onopen = () => {
-        updateConnection(true);
-        reconnectAttempts = 0;
-      };
-      
-      eventSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          updateDashboard(data);
-        } catch (err) {
-          console.error('Parse error:', err);
-        }
-      };
-      
-      eventSource.onerror = () => {
-        updateConnection(false);
-        eventSource.close();
-        if (reconnectAttempts < 5) {
-          reconnectAttempts++;
-          setTimeout(connectSSE, Math.min(1000 * Math.pow(2, reconnectAttempts), 30000));
-        }
-      };
-    }
-
-    function updateConnection(connected) {
-      const dot = document.getElementById('connectionDot');
-      const text = document.getElementById('connectionText');
-      
-      if (connected) {
-        dot.className = 'w-2 h-2 rounded-full bg-[var(--color-status-online)] shadow-[0_0_8px_var(--color-status-online)]';
-        text.textContent = 'Live';
-        text.className = 'text-sm text-[var(--color-status-online)]';
-      } else {
-        dot.className = 'w-2 h-2 rounded-full bg-red-500 animate-pulse';
-        text.textContent = 'Reconnecting...';
-        text.className = 'text-sm text-red-400';
-      }
-    }
-
-    function updateDashboard(data) {
-      const working = data.agents?.filter(a => a.status === 'working').length || 0;
-      document.getElementById('activeCount').textContent = working;
-      document.getElementById('totalCount').textContent = data.agents?.length || 6;
-      document.getElementById('lastUpdate').textContent = `Last update: ${new Date().toLocaleTimeString()}`;
-      
-      // Update agent cards
-      data.agents?.forEach(agent => {
-        const card = document.querySelector(`[data-agent-id="${agent.id}"]`);
-        if (card) {
-          const isWorking = agent.status === 'working';
-          const badge = card.querySelector('.status-badge');
-          const dot = badge.querySelector('span:first-child');
-          const text = badge.querySelector('span:last-child');
-          
-          badge.className = `status-badge ${isWorking ? 'online' : 'idle'}`;
-          dot.className = `w-1.5 h-1.5 rounded-full ${isWorking ? 'bg-[var(--color-status-online)] shadow-[0_0_8px_var(--color-status-online)]' : 'bg-[var(--color-text-muted)]'}`;
-          text.textContent = agent.status;
-          
-          if (isWorking) {
-            card.classList.add('active');
-          } else {
-            card.classList.remove('active');
+      function connectSSE() {
+        const url = `${WORKER_URL}/api/sse/${TEAM_ID}`;
+        eventSource = new EventSource(url);
+        
+        eventSource.onopen = () => {
+          updateConnection(true);
+          reconnectAttempts = 0;
+        };
+        
+        eventSource.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            updateDashboard(data);
+            office.setAgents(data.agents);
+          } catch (err) {
+            console.error('Parse error:', err);
           }
+        };
+        
+        eventSource.onerror = () => {
+          updateConnection(false);
+          eventSource.close();
+          if (reconnectAttempts < 5) {
+            reconnectAttempts++;
+            setTimeout(connectSSE, Math.min(1000 * Math.pow(2, reconnectAttempts), 30000));
+          }
+        };
+      }
+
+      function updateConnection(connected) {
+        const dot = document.getElementById('connectionDot');
+        const text = document.getElementById('connectionText');
+        
+        if (connected) {
+          dot.className = 'w-2 h-2 rounded-full bg-[var(--color-status-online)] shadow-[0_0_8px_var(--color-status-online)]';
+          text.textContent = 'Live';
+          text.className = 'text-sm text-[var(--color-status-online)]';
+        } else {
+          dot.className = 'w-2 h-2 rounded-full bg-red-500 animate-pulse';
+          text.textContent = 'Reconnecting...';
+          text.className = 'text-sm text-red-400';
         }
-      });
-      
-      // Update canvas
-      drawOffice(data.agents);
-    }
+      }
 
-    function drawOffice(agents) {
-      if (!ctx) return;
-      
-      // Clear
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // Draw workstations
-      AGENT_CONFIG.forEach((agent, i) => {
-        const pos = POSITIONS[i];
-        const status = agents?.find(a => a.id === agent.id)?.status || 'idle';
-        const isWorking = status === 'working';
+      function updateDashboard(data) {
+        const working = data.agents?.filter(a => a.status === 'working').length || 0;
+        document.getElementById('activeCount').textContent = working;
+        document.getElementById('totalCount').textContent = data.agents?.length || 6;
+        document.getElementById('lastUpdate').textContent = `Last update: ${new Date().toLocaleTimeString()}`;
         
-        // Desk
-        ctx.fillStyle = '#1e293b';
-        ctx.fillRect(pos.x, pos.y, 120, 80);
-        ctx.strokeStyle = '#334155';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(pos.x, pos.y, 120, 80);
-        
-        // Avatar
-        const grad = ctx.createLinearGradient(pos.x, pos.y, pos.x + 120, pos.y + 80);
-        grad.addColorStop(0, agent.color);
-        grad.addColorStop(1, agent.color + 'dd');
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(pos.x + 60, pos.y + 40, 25, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Status ring
-        ctx.strokeStyle = isWorking ? '#22c55e' : '#64748b';
-        ctx.lineWidth = 4;
-        ctx.beginPath();
-        ctx.arc(pos.x + 60, pos.y + 40, 30, 0, Math.PI * 2);
-        ctx.stroke();
-        
-        // Initial
-        ctx.fillStyle = '#fff';
-        ctx.font = 'bold 20px Inter, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(agent.name[0], pos.x + 60, pos.y + 47);
-        
-        // Label
-        ctx.fillStyle = '#94a3b8';
-        ctx.font = '12px Inter, sans-serif';
-        ctx.fillText(agent.name, pos.x + 60, pos.y + 100);
-      });
-    }
+        // Update agent cards
+        data.agents?.forEach(agent => {
+          const card = document.querySelector(`[data-agent-id="${agent.id}"]`);
+          if (card) {
+            const isWorking = agent.status === 'working';
+            const badge = card.querySelector('.status-badge');
+            const dot = badge.querySelector('span:first-child');
+            const text = badge.querySelector('span:last-child');
+            
+            badge.className = `status-badge ${isWorking ? 'online' : 'idle'}`;
+            dot.className = `w-1.5 h-1.5 rounded-full ${isWorking ? 'bg-[var(--color-status-online)] shadow-[0_0_8px_var(--color-status-online)]' : 'bg-[var(--color-text-muted)]'}`;
+            text.textContent = agent.status;
+            
+            if (isWorking) {
+              card.classList.add('active');
+            } else {
+              card.classList.remove('active');
+            }
+          }
+        });
+      }
 
-    // Initialize
-    drawOffice(initialData.agents);
-    connectSSE();
+      // Initialize
+      office.setAgents(initialData.agents);
+      connectSSE();
+    });
   </script>
 </Layout>
