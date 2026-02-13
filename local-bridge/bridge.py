@@ -16,7 +16,8 @@ from typing import Dict, List, Any
 
 # Configuration
 TEAM_ID = os.getenv("TEAM_ID", "yunhe-core")
-WORKER_URL = os.getenv("WORKER_URL", "https://openclaw.realrip.com")
+# Use direct Worker URL to bypass Cloudflare Access
+WORKER_URL = os.getenv("WORKER_URL", "https://openclaw-dashboard.realriplab.workers.dev")
 API_TOKEN = os.getenv("API_TOKEN", "yunhe-2024-offline")
 PUSH_INTERVAL = int(os.getenv("PUSH_INTERVAL", "5"))  # seconds
 
