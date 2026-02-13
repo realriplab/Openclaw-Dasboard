@@ -9,7 +9,8 @@ export default defineConfig({
   adapter: cloudflare({
     platformProxy: {
       enabled: true
-    }
+    },
+    imageService: 'passthrough'
   }),
   vite: {
     plugins: [tailwindcss()]
@@ -17,5 +18,10 @@ export default defineConfig({
   server: {
     port: 4321,
     host: true
+  },
+  image: {
+    service: {
+      entrypoint: 'astro/assets/services/noop'
+    }
   }
 });

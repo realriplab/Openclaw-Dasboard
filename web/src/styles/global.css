@@ -52,7 +52,6 @@
   /* Animations */
   --animate-fade-in: fade-in 0.3s ease-out;
   --animate-pulse: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  --animate-bounce: bounce 1s infinite;
   
   @keyframes fade-in {
     from { opacity: 0; transform: translateY(10px); }
@@ -79,7 +78,7 @@
 
 /* Utility Classes */
 @layer utilities {
-  /* Agent Status Indicators */
+  /* Status Indicators */
   .status-online {
     background-color: var(--color-status-online);
     box-shadow: 0 0 8px var(--color-status-online);
@@ -89,60 +88,52 @@
     background-color: var(--color-status-offline);
   }
   
-  /* Card Hover Effect */
-  .card-hover {
-    transition: all 0.2s ease-in-out;
-  }
-  
-  .card-hover:hover {
-    border-color: var(--color-border-focus);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-glow);
-  }
-  
-  /* Glass Effect */
-  .glass {
-    background: rgba(30, 41, 59, 0.7);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  
-  /* Gradient Text */
-  .gradient-text {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-  
-  /* Animation Utilities */
+  /* Animation */
   .animate-fade-in {
     animation: var(--animate-fade-in);
   }
 }
 
-/* Component Patterns */
-@layer components {
-  /* Agent Card */
-  .agent-card {
-    @apply flex items-center gap-3 p-4 bg-bg-secondary border border-border-default rounded-xl;
-    @apply card-hover;
-  }
-  
-  .agent-card.active {
-    @apply border-status-online/30 bg-status-online/5;
-  }
-  
-  /* Status Badge */
-  .status-badge {
-    @apply flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold uppercase;
-  }
-  
-  .status-badge.online {
-    @apply bg-status-online/15 text-status-online;
-  }
-  
-  .status-badge.idle {
-    @apply bg-text-muted/15 text-text-muted;
-  }
+/* Component Styles - Using standard CSS instead of @apply with custom utilities */
+.agent-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background-color: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-default);
+  border-radius: 0.75rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.agent-card:hover {
+  border-color: var(--color-border-focus);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow);
+}
+
+.agent-card.active {
+  border-color: rgba(34, 197, 94, 0.3);
+  background-color: rgba(34, 197, 94, 0.05);
+}
+
+.status-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-badge.online {
+  background-color: rgba(34, 197, 94, 0.15);
+  color: var(--color-status-online);
+}
+
+.status-badge.idle {
+  background-color: rgba(148, 163, 184, 0.15);
+  color: var(--color-text-muted);
 }
