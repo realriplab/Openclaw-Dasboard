@@ -1,0 +1,440 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+// Server-side data fetching for initial state
+const WORKER_URL = 'https://openclaw.realrip.com';
+const TEAM_ID = 'yunhe-core';
+
+let initialData = { agents: [], timestamp: '' };
+
+try {
+  const response = await fetch(`${WORKER_URL}/api/agents/${TEAM_ID}`);
+  if (response.ok) {
+    initialData = await response.json();
+  }
+} catch (e) {
+  console.error('Failed to fetch initial data:', e);
+}
+---
+
+<Layout title="Openclaw Dashboard - Real-time Agent Monitoring">
+  <!-- Header -->
+  <header class="header">
+    <div class="brand">
+      <div class="logo">🤖</div>
+      <div>
+        <h1>Openclaw Dashboard</h1>
+        <p class="subtitle">Real-time Agent Monitoring</p>
+      </div>
+    </div>
+    
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-value" id="activeCount">--</span>
+        <span class="stat-label">Active</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value" id="totalCount">{initialData.agents?.length || 6}</span>
+        <span class="stat-label">Total</span>
+      </div>
+      <div class="connection-status">
+        <span class="status-dot" id="connectionDot"></span>
+        <span id="connectionText">Connecting...</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Dashboard -->
+  <main class="main">
+    <!-- Office Visualization Canvas -->
+    <div class="canvas-container">
+      <canvas id="officeCanvas" width="1200" height="700"></canvas>
+    </div>
+
+    <!-- Agent Cards -->
+    <div class="agents-panel" id="agentsPanel">
+      <!-- Populated by JavaScript -->
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <span>Openclaw Dashboard v1.0</span>
+    <span class="last-update" id="lastUpdate">--</span>
+  </footer>
+
+  <script define:vars={{ initialData, WORKER_URL, TEAM_ID }}>
+    // Office Visualization and Real-time Updates
+    const canvas = document.getElementById('officeCanvas');
+    const ctx = canvas?.getContext('2d');
+    
+    // Agent configuration
+    const AGENTS = [
+      { id: 'coder', name: 'Coder', color: '#3b82f6', gradient: ['#60a5fa', '#3b82f6'], initial: 'C', role: 'Engineering', x: 150, y: 250 },
+      { id: 'writer', name: 'Writer', color: '#f43f5e', gradient: ['#fb7185', '#f43f5e'], initial: 'W', role: 'Content', x: 400, y: 250 },
+      { id: 'founder', name: 'Founder', color: '#a855f7', gradient: ['#c084fc', '#a855f7'], initial: 'F', role: 'Leadership', x: 650, y: 250 },
+      { id: 'investor', name: 'Investor', color: '#f59e0b', gradient: ['#fbbf24', '#f59e0b'], initial: 'I', role: 'Finance', x: 150, y: 450 },
+      { id: 'coach', name: 'Coach', color: '#10b981', gradient: ['#34d399', '#10b981'], initial: 'C', role: 'People', x: 400, y: 450 },
+      { id: 'main', name: 'Main', color: '#06b6d4', gradient: ['#22d3ee', '#06b6d4'], initial: 'M', role: 'General', x: 650, y: 450 }
+    ];
+
+    // SSE Connection
+    let eventSource = null;
+    let reconnectAttempts = 0;
+    
+    function connectSSE() {
+      const url = `${WORKER_URL}/api/sse/${TEAM_ID}`;
+      
+      eventSource = new EventSource(url);
+      
+      eventSource.onopen = () => {
+        updateConnectionStatus(true);
+        reconnectAttempts = 0;
+      };
+      
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          updateDashboard(data);
+        } catch (err) {
+          console.error('Parse error:', err);
+        }
+      };
+      
+      eventSource.onerror = () => {
+        updateConnectionStatus(false);
+        eventSource.close();
+        
+        // Reconnect with backoff
+        if (reconnectAttempts < 5) {
+          reconnectAttempts++;
+          setTimeout(connectSSE, Math.min(1000 * Math.pow(2, reconnectAttempts), 30000));
+        }
+      };
+    }
+    
+    function updateConnectionStatus(connected) {
+      const dot = document.getElementById('connectionDot');
+      const text = document.getElementById('connectionText');
+      
+      if (connected) {
+        dot.className = 'status-dot connected';
+        text.textContent = 'Live';
+      } else {
+        dot.className = 'status-dot disconnected';
+        text.textContent = 'Reconnecting...';
+      }
+    }
+    
+    function updateDashboard(data) {
+      // Update stats
+      const working = data.agents?.filter(a => a.status === 'working').length || 0;
+      document.getElementById('activeCount').textContent = working;
+      document.getElementById('totalCount').textContent = data.agents?.length || 6;
+      document.getElementById('lastUpdate').textContent = `Last update: ${new Date().toLocaleTimeString()}`;
+      
+      // Update agent cards
+      renderAgentCards(data.agents);
+      
+      // Update canvas if implemented
+      if (ctx) {
+        drawOffice(data.agents);
+      }
+    }
+    
+    function renderAgentCards(agents) {
+      const panel = document.getElementById('agentsPanel');
+      if (!panel || !agents) return;
+      
+      panel.innerHTML = agents.map(agent => {
+        const isWorking = agent.status === 'working';
+        const agentConfig = AGENTS.find(a => a.id === agent.id) || {};
+        
+        return `
+          <div class="agent-card ${isWorking ? 'active' : ''}">
+            <div class="agent-avatar" style="background: linear-gradient(135deg, ${agentConfig.gradient?.[0] || '#666'}, ${agentConfig.gradient?.[1] || '#444'})">
+              ${agentConfig.initial || agent.name[0]}
+            </div>
+            <div class="agent-info">
+              <div class="agent-name">${agent.name}</div>
+              <div class="agent-role">${agent.role || agentConfig.role}</div>
+            </div>
+            <div class="agent-status ${isWorking ? 'working' : 'idle'}">
+              <span class="status-indicator"></span>
+              ${agent.status}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    function drawOffice(agents) {
+      // Simplified office visualization
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw workstations
+      AGENTS.forEach((agent, i) => {
+        const status = agents?.find(a => a.id === agent.id)?.status || 'idle';
+        const isWorking = status === 'working';
+        
+        // Draw desk
+        ctx.fillStyle = '#334155';
+        ctx.fillRect(agent.x, agent.y, 120, 80);
+        
+        // Draw agent avatar
+        ctx.fillStyle = agent.gradient[1];
+        ctx.beginPath();
+        ctx.arc(agent.x + 60, agent.y + 40, 20, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw status ring
+        ctx.strokeStyle = isWorking ? '#22c55e' : '#64748b';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(agent.x + 60, agent.y + 40, 25, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Draw label
+        ctx.fillStyle = '#fff';
+        ctx.font = '12px Inter';
+        ctx.textAlign = 'center';
+        ctx.fillText(agent.name, agent.x + 60, agent.y + 100);
+      });
+    }
+    
+    // Initialize
+    if (initialData.agents?.length) {
+      updateDashboard(initialData);
+    }
+    connectSSE();
+  </script>
+
+  <style>
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 24px 32px;
+      border-bottom: 1px solid #1e293b;
+    }
+    
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    
+    .logo {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+    
+    .brand h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    
+    .subtitle {
+      font-size: 14px;
+      color: #64748b;
+    }
+    
+    .stats {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+    }
+    
+    .stat {
+      text-align: center;
+    }
+    
+    .stat-value {
+      display: block;
+      font-size: 28px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    
+    .stat-label {
+      font-size: 12px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .connection-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: #1e293b;
+      border-radius: 20px;
+    }
+    
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #64748b;
+    }
+    
+    .status-dot.connected {
+      background: #22c55e;
+      box-shadow: 0 0 8px #22c55e;
+    }
+    
+    .status-dot.disconnected {
+      background: #ef4444;
+      animation: pulse 1s infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .main {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 24px;
+      padding: 24px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+    
+    .canvas-container {
+      background: #1e293b;
+      border-radius: 16px;
+      border: 1px solid #334155;
+      overflow: hidden;
+    }
+    
+    #officeCanvas {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    
+    .agents-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .agent-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      transition: all 0.2s;
+    }
+    
+    .agent-card:hover {
+      border-color: #6366f1;
+    }
+    
+    .agent-card.active {
+      border-color: #22c55e;
+      background: rgba(34, 197, 94, 0.05);
+    }
+    
+    .agent-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      color: white;
+    }
+    
+    .agent-info {
+      flex: 1;
+    }
+    
+    .agent-name {
+      font-weight: 600;
+      color: #f8fafc;
+    }
+    
+    .agent-role {
+      font-size: 12px;
+      color: #64748b;
+    }
+    
+    .agent-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    
+    .agent-status.working {
+      background: rgba(34, 197, 94, 0.15);
+      color: #22c55e;
+    }
+    
+    .agent-status.idle {
+      background: rgba(148, 163, 184, 0.15);
+      color: #94a3b8;
+    }
+    
+    .status-indicator {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+    
+    .working .status-indicator {
+      background: #22c55e;
+      box-shadow: 0 0 6px #22c55e;
+    }
+    
+    .idle .status-indicator {
+      background: #94a3b8;
+    }
+    
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      padding: 16px 32px;
+      border-top: 1px solid #1e293b;
+      font-size: 14px;
+      color: #64748b;
+    }
+    
+    @media (max-width: 1024px) {
+      .main {
+        grid-template-columns: 1fr;
+      }
+      
+      .header {
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+      }
+      
+      .stats {
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+    }
+  </style>
+</Layout>
