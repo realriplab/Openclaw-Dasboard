@@ -43,4 +43,3 @@ jobs:
           accountId: 422d4762169a3d46b47111e3c24159cd
           projectName: openclaw-dashboard
           directory: web/dist
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
