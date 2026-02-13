@@ -151,7 +151,11 @@ const AGENT_CONFIG = [
       let reconnectAttempts = 0;
 
       function connectSSE() {
-        const url = `${WORKER_URL}/api/sse/${TEAM_ID}`;
+        // Dynamic team from URL param
+        const urlParams = new URLSearchParams(window.location.search);
+        const teamId = urlParams.get('team') || 'default';
+        
+        const url = `${WORKER_URL}/api/sse/${teamId}`;
         eventSource = new EventSource(url);
         
         eventSource.onopen = () => {

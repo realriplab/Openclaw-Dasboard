@@ -52,9 +52,19 @@ export class OfficeVisualization {
     const ctx = this.ctx;
     const canvas = this.canvas;
     
+    // Handle HiDPI displays - ensure canvas matches display size
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    
+    if (canvas.width !== rect.width * dpr || canvas.height !== rect.height * dpr) {
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      ctx.scale(dpr, dpr);
+    }
+    
     // Clear canvas
     ctx.fillStyle = '#0f172a';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, rect.width, rect.height);
     
     // Draw floor grid
     this.drawFloor();
@@ -80,9 +90,10 @@ export class OfficeVisualization {
   drawFloor() {
     const ctx = this.ctx;
     const tileSize = 40;
+    const rect = this.canvas.getBoundingClientRect();
     
-    for (let y = 0; y < this.canvas.height; y += tileSize) {
-      for (let x = 0; x < this.canvas.width; x += tileSize) {
+    for (let y = 0; y < rect.height; y += tileSize) {
+      for (let x = 0; x < rect.width; x += tileSize) {
         const isEven = ((x / tileSize) + (y / tileSize)) % 2 === 0;
         ctx.fillStyle = isEven ? '#0a1929' : '#0d1f33';
         ctx.fillRect(x, y, tileSize, tileSize);
