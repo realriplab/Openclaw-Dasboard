@@ -1,5 +1,5 @@
 import type { D1Database } from '@cloudflare/workers-types';
-import type { AgentStatus, TeamState } from './types';
+import type { AgentStatus, TeamState } from '../types';
 
 export class HistoryDB {
   private db: D1Database;
