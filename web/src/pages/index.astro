@@ -143,7 +143,7 @@ const AGENT_CONFIG = [
   </footer>
 
   <script define:vars={{ initialData, WORKER_URL, TEAM_ID, AGENT_CONFIG }}>
-    import('../lib/OfficeVisualization.js').then(({ OfficeVisualization }) => {
+    import('/src/lib/OfficeVisualization.js').then(({ OfficeVisualization }) => {
       console.log('OfficeVisualization loaded');
       const canvas = document.getElementById('officeCanvas');
       console.log('Canvas element:', canvas);
