@@ -13,6 +13,7 @@ export class AgentState {
   };
   private historyDB: HistoryDB | null = null;
   private notificationService: NotificationService | null = null;
+  private initialized = false;
 
   constructor(state: DurableObjectState, env: any) {
     this.state = state;
@@ -22,28 +23,44 @@ export class AgentState {
     if (env.DB) {
       this.historyDB = new HistoryDB(env.DB);
       this.notificationService = new NotificationService(env.DB, {
-        offlineThresholdMinutes: 10 // Notify after 10 minutes idle
+        offlineThresholdMinutes: 10
       });
     }
+  }
+
+  async init(): Promise<void> {
+    if (this.initialized) return;
     
-    // Restore state from storage on startup
-    this.state.blockConcurrencyWhile(async () => {
-      const stored = await this.state.storage.get<TeamState>('agents');
-      if (stored) {
-        this.currentState = stored;
-      }
-      
-      // Init D1 tables
-      if (this.historyDB) {
+    // Restore state from storage
+    const stored = await this.state.storage.get<TeamState>('agents');
+    if (stored) {
+      this.currentState = stored;
+    }
+    
+    // Init D1 tables (wrapped in try-catch to not fail request)
+    if (this.historyDB) {
+      try {
         await this.historyDB.init();
+      } catch (e) {
+        console.error('HistoryDB init failed:', e);
       }
-      if (this.notificationService) {
+    }
+    
+    if (this.notificationService) {
+      try {
         await this.notificationService.init();
+      } catch (e) {
+        console.error('NotificationService init failed:', e);
       }
-    });
+    }
+    
+    this.initialized = true;
   }
 
   async fetch(request: Request): Promise<Response> {
+    // Initialize on first request
+    await this.init();
+    
     const url = new URL(request.url);
     const path = url.pathname;
 
@@ -78,10 +95,6 @@ export class AgentState {
 
   private async handleReport(request: Request, corsHeaders: Record<string, string>): Promise<Response> {
     try {
-      // Verify API token
-      const authHeader = request.headers.get('Authorization');
-      // In production, validate against env.API_TOKEN
-      
       const data = await request.json() as TeamState;
       
       // Update state
@@ -93,22 +106,18 @@ export class AgentState {
       // Persist to storage
       await this.state.storage.put('agents', this.currentState);
       
-      // Store history in D1
+      // Store history in D1 (non-blocking)
       if (this.historyDB && data.agents.length > 0) {
-        try {
-          await this.historyDB.recordStatus(data.teamId, data.agents);
-        } catch (dbError) {
-          console.error('Failed to record history:', dbError);
-        }
+        this.historyDB.recordStatus(data.teamId, data.agents).catch(e => {
+          console.error('Failed to record history:', e);
+        });
       }
       
-      // Check for offline notifications
+      // Check for offline notifications (non-blocking)
       if (this.notificationService && data.agents.length > 0) {
-        try {
-          await this.notificationService.checkAndNotify(data.teamId, data.agents);
-        } catch (notifError) {
-          console.error('Failed to check notifications:', notifError);
-        }
+        this.notificationService.checkAndNotify(data.teamId, data.agents).catch(e => {
+          console.error('Failed to check notifications:', e);
+        });
       }
       
       // Broadcast to all connected clients
