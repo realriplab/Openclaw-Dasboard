@@ -1,22 +1,148 @@
+/* Tailwind CSS v4 - Design System */
 @import "tailwindcss";
 
+/* Design Tokens - Semantic Color System */
 @theme {
-  --color-slate-750: #1e293b;
-  --color-slate-850: #0f172a;
-  --color-slate-950: #020617;
+  /* Background Colors */
+  --color-bg-primary: #0f172a;
+  --color-bg-secondary: #1e293b;
+  --color-bg-tertiary: #334155;
+  
+  /* Text Colors */
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #e2e8f0;
+  --color-text-muted: #94a3b8;
+  --color-text-disabled: #64748b;
+  
+  /* Border Colors */
+  --color-border-default: #334155;
+  --color-border-hover: #475569;
+  --color-border-focus: #6366f1;
+  
+  /* Status Colors */
+  --color-status-online: #22c55e;
+  --color-status-offline: #94a3b8;
+  --color-status-busy: #f59e0b;
+  
+  /* Accent Colors */
+  --color-accent-indigo: #6366f1;
+  --color-accent-violet: #8b5cf6;
+  --color-accent-blue: #3b82f6;
+  
+  /* Agent Colors */
+  --color-coder: #3b82f6;
+  --color-writer: #f43f5e;
+  --color-founder: #a855f7;
+  --color-investor: #f59e0b;
+  --color-coach: #10b981;
+  --color-main: #06b6d4;
+  
+  /* Radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  
+  /* Shadows */
+  --shadow-card: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-glow: 0 0 20px -5px rgb(99 102 241 / 0.4);
+  
+  /* Animations */
+  --animate-fade-in: fade-in 0.3s ease-out;
+  --animate-pulse: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-bounce: bounce 1s infinite;
+  
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 }
 
-body {
-  background-color: #0f172a;
-  color: #e2e8f0;
-  font-family: 'Inter', system-ui, sans-serif;
+/* Base Styles */
+@layer base {
+  body {
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-secondary);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* Focus Visible - Accessibility */
+  *:focus-visible {
+    outline: 2px solid var(--color-accent-indigo);
+    outline-offset: 2px;
+  }
 }
 
-@keyframes pulse-ring {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+/* Utility Classes */
+@layer utilities {
+  /* Agent Status Indicators */
+  .status-online {
+    background-color: var(--color-status-online);
+    box-shadow: 0 0 8px var(--color-status-online);
+  }
+  
+  .status-offline {
+    background-color: var(--color-status-offline);
+  }
+  
+  /* Card Hover Effect */
+  .card-hover {
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .card-hover:hover {
+    border-color: var(--color-border-focus);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-glow);
+  }
+  
+  /* Glass Effect */
+  .glass {
+    background: rgba(30, 41, 59, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  /* Gradient Text */
+  .gradient-text {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  
+  /* Animation Utilities */
+  .animate-fade-in {
+    animation: var(--animate-fade-in);
+  }
 }
 
-.animate-pulse-ring {
-  animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+/* Component Patterns */
+@layer components {
+  /* Agent Card */
+  .agent-card {
+    @apply flex items-center gap-3 p-4 bg-bg-secondary border border-border-default rounded-xl;
+    @apply card-hover;
+  }
+  
+  .agent-card.active {
+    @apply border-status-online/30 bg-status-online/5;
+  }
+  
+  /* Status Badge */
+  .status-badge {
+    @apply flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold uppercase;
+  }
+  
+  .status-badge.online {
+    @apply bg-status-online/15 text-status-online;
+  }
+  
+  .status-badge.idle {
+    @apply bg-text-muted/15 text-text-muted;
+  }
 }
