@@ -1,6 +1,7 @@
 import { AgentState } from './durable-objects/AgentState';
 import type { Env } from './types';
 
+// CI/CD Test - v1.0.1
 export { AgentState };
 
 export default {
