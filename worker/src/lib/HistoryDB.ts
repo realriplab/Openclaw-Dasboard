@@ -9,7 +9,7 @@ export class HistoryDB {
   }
 
   async init(): Promise<void> {
-    // Create tables if not exist
+    // Create tables one by one for D1 compatibility
     await this.db.exec(`
       CREATE TABLE IF NOT EXISTS agent_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -17,10 +17,15 @@ export class HistoryDB {
         team_id TEXT NOT NULL,
         status TEXT NOT NULL,
         timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
-      
-      CREATE INDEX IF NOT EXISTS idx_agent_time ON agent_history(agent_id, timestamp);
-      CREATE INDEX IF NOT EXISTS idx_team_time ON agent_history(team_id, timestamp);
+      )
+    `);
+    
+    await this.db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_agent_time ON agent_history(agent_id, timestamp)
+    `);
+    
+    await this.db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_team_time ON agent_history(team_id, timestamp)
     `);
   }
 

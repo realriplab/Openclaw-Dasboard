@@ -16,6 +16,7 @@ export class NotificationService {
   }
 
   async init(): Promise<void> {
+    // Create tables one by one for D1 compatibility
     await this.db.exec(`
       CREATE TABLE IF NOT EXISTS notifications (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -25,8 +26,10 @@ export class NotificationService {
         message TEXT NOT NULL,
         sent_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         acknowledged BOOLEAN DEFAULT FALSE
-      );
-      
+      )
+    `);
+    
+    await this.db.exec(`
       CREATE TABLE IF NOT EXISTS agent_status_changes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         agent_id TEXT NOT NULL,
@@ -34,10 +37,15 @@ export class NotificationService {
         old_status TEXT NOT NULL,
         new_status TEXT NOT NULL,
         changed_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      );
-      
-      CREATE INDEX IF NOT EXISTS idx_notifications_agent ON notifications(agent_id, team_id);
-      CREATE INDEX IF NOT EXISTS idx_status_changes_agent ON agent_status_changes(agent_id, team_id);
+      )
+    `);
+    
+    await this.db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_notifications_agent ON notifications(agent_id, team_id)
+    `);
+    
+    await this.db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_status_changes_agent ON agent_status_changes(agent_id, team_id)
     `);
   }
 
