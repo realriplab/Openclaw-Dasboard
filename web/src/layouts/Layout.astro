@@ -16,24 +16,6 @@ const { title = "Openclaw Dashboard" } = Astro.props;
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style is:global>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-      
-      body {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        background: #0f172a;
-        color: #e2e8f0;
-        min-height: 100vh;
-      }
-      
-      canvas {
-        image-rendering: pixelated;
-      }
-    </style>
   </head>
   <body>
     <slot />

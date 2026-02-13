@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import '../styles/global.css';
 
 // Server-side data fetching for initial state
 const WORKER_URL = 'https://openclaw.realrip.com';
@@ -15,80 +16,107 @@ try {
 } catch (e) {
   console.error('Failed to fetch initial data:', e);
 }
+
+const workingCount = initialData.agents?.filter((a: any) => a.status === 'working').length || 0;
+const totalCount = initialData.agents?.length || 6;
 ---
 
 <Layout title="Openclaw Dashboard - Real-time Agent Monitoring">
   <!-- Header -->
-  <header class="header">
-    <div class="brand">
-      <div class="logo">🤖</div>
+  <header class="flex justify-between items-center px-8 py-6 border-b border-slate-800">
+    <div class="flex items-center gap-4">
+      <div class="w-12 h-12 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl flex items-center justify-center text-2xl shadow-lg">
+        🤖
+      </div>
       <div>
-        <h1>Openclaw Dashboard</h1>
-        <p class="subtitle">Real-time Agent Monitoring</p>
+        <h1 class="text-2xl font-bold text-white">Openclaw Dashboard</h1>
+        <p class="text-sm text-slate-500">Real-time Agent Monitoring</p>
       </div>
     </div>
     
-    <div class="stats">
-      <div class="stat">
-        <span class="stat-value" id="activeCount">--</span>
-        <span class="stat-label">Active</span>
+    <div class="flex items-center gap-8">
+      <div class="text-center">
+        <span class="block text-3xl font-bold text-white" id="activeCount">{workingCount}</span>
+        <span class="text-xs text-slate-500 uppercase tracking-wider">Active</span>
       </div>
-      <div class="stat">
-        <span class="stat-value" id="totalCount">{initialData.agents?.length || 6}</span>
-        <span class="stat-label">Total</span>
+      
+      <div class="text-center">
+        <span class="block text-3xl font-bold text-white" id="totalCount">{totalCount}</span>
+        <span class="text-xs text-slate-500 uppercase tracking-wider">Total</span>
       </div>
-      <div class="connection-status">
-        <span class="status-dot" id="connectionDot"></span>
-        <span id="connectionText">Connecting...</span>
+      
+      <div class="flex items-center gap-2 px-4 py-2 bg-slate-800 rounded-full">
+        <span class="w-2 h-2 rounded-full bg-slate-600" id="connectionDot"></span>
+        <span class="text-sm text-slate-400" id="connectionText">Connecting...</span>
       </div>
     </div>
   </header>
 
-  <!-- Main Dashboard -->
-  <main class="main">
-    <!-- Office Visualization Canvas -->
-    <div class="canvas-container">
-      <canvas id="officeCanvas" width="1200" height="700"></canvas>
+  <!-- Main Content -->
+  <main class="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 p-6 max-w-7xl mx-auto">
+    <!-- Canvas Visualization -->
+    <div class="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
+      <canvas id="officeCanvas" width="1200" height="700" class="w-full h-auto block"></canvas>
     </div>
 
-    <!-- Agent Cards -->
-    <div class="agents-panel" id="agentsPanel">
-      <!-- Populated by JavaScript -->
+    <!-- Agent Panel -->
+    <div class="space-y-3" id="agentsPanel">
+      {initialData.agents?.map((agent: any) => (
+        <div class="agent-card flex items-center gap-3 p-4 bg-slate-900 border border-slate-800 rounded-xl transition-all hover:border-indigo-500"
+          data-agent-id={agent.id}
+          data-status={agent.status}
+        >
+          <div 
+            class="w-11 h-11 rounded-xl flex items-center justify-center font-semibold text-white text-lg"
+            style={`background: linear-gradient(135deg, ${agent.color}, ${agent.color}dd)`}
+          >
+            {agent.name[0]}
+          </div>
+          <div class="flex-1">
+            <div class="font-semibold text-white">{agent.name}</div>
+            <div class="text-xs text-slate-500">{agent.role}</div>
+          </div>
+          <div class={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold uppercase ${
+            agent.status === 'working' 
+              ? 'bg-green-500/15 text-green-500' 
+              : 'bg-slate-600/15 text-slate-500'
+          }`}>
+            <span class={`w-1.5 h-1.5 rounded-full ${
+              agent.status === 'working' ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]' : 'bg-slate-500'
+            }`}></span>
+            {agent.status}
+          </div>
+        </div>
+      ))}
     </div>
   </main>
 
   <!-- Footer -->
-  <footer class="footer">
+  <footer class="flex justify-between items-center px-8 py-4 border-t border-slate-800 text-sm text-slate-500">
     <span>Openclaw Dashboard v1.0</span>
-    <span class="last-update" id="lastUpdate">--</span>
+    <span id="lastUpdate">--</span>
   </footer>
 
   <script define:vars={{ initialData, WORKER_URL, TEAM_ID }}>
-    // Office Visualization and Real-time Updates
-    const canvas = document.getElementById('officeCanvas');
-    const ctx = canvas?.getContext('2d');
-    
-    // Agent configuration
+    // Agent configuration with positions
     const AGENTS = [
-      { id: 'coder', name: 'Coder', color: '#3b82f6', gradient: ['#60a5fa', '#3b82f6'], initial: 'C', role: 'Engineering', x: 150, y: 250 },
-      { id: 'writer', name: 'Writer', color: '#f43f5e', gradient: ['#fb7185', '#f43f5e'], initial: 'W', role: 'Content', x: 400, y: 250 },
-      { id: 'founder', name: 'Founder', color: '#a855f7', gradient: ['#c084fc', '#a855f7'], initial: 'F', role: 'Leadership', x: 650, y: 250 },
-      { id: 'investor', name: 'Investor', color: '#f59e0b', gradient: ['#fbbf24', '#f59e0b'], initial: 'I', role: 'Finance', x: 150, y: 450 },
-      { id: 'coach', name: 'Coach', color: '#10b981', gradient: ['#34d399', '#10b981'], initial: 'C', role: 'People', x: 400, y: 450 },
-      { id: 'main', name: 'Main', color: '#06b6d4', gradient: ['#22d3ee', '#06b6d4'], initial: 'M', role: 'General', x: 650, y: 450 }
+      { id: 'coder', name: 'Coder', color: '#3b82f6', x: 150, y: 250 },
+      { id: 'writer', name: 'Writer', color: '#f43f5e', x: 400, y: 250 },
+      { id: 'founder', name: 'Founder', color: '#a855f7', x: 650, y: 250 },
+      { id: 'investor', name: 'Investor', color: '#f59e0b', x: 150, y: 450 },
+      { id: 'coach', name: 'Coach', color: '#10b981', x: 400, y: 450 },
+      { id: 'main', name: 'Main', color: '#06b6d4', x: 650, y: 450 }
     ];
 
-    // SSE Connection
     let eventSource = null;
     let reconnectAttempts = 0;
-    
+
     function connectSSE() {
       const url = `${WORKER_URL}/api/sse/${TEAM_ID}`;
-      
       eventSource = new EventSource(url);
       
       eventSource.onopen = () => {
-        updateConnectionStatus(true);
+        updateConnection(true);
         reconnectAttempts = 0;
       };
       
@@ -102,30 +130,30 @@ try {
       };
       
       eventSource.onerror = () => {
-        updateConnectionStatus(false);
+        updateConnection(false);
         eventSource.close();
-        
-        // Reconnect with backoff
         if (reconnectAttempts < 5) {
           reconnectAttempts++;
           setTimeout(connectSSE, Math.min(1000 * Math.pow(2, reconnectAttempts), 30000));
         }
       };
     }
-    
-    function updateConnectionStatus(connected) {
+
+    function updateConnection(connected) {
       const dot = document.getElementById('connectionDot');
       const text = document.getElementById('connectionText');
       
       if (connected) {
-        dot.className = 'status-dot connected';
+        dot.className = 'w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]';
         text.textContent = 'Live';
+        text.className = 'text-sm text-green-500';
       } else {
-        dot.className = 'status-dot disconnected';
+        dot.className = 'w-2 h-2 rounded-full bg-red-500 animate-pulse';
         text.textContent = 'Reconnecting...';
+        text.className = 'text-sm text-red-400';
       }
     }
-    
+
     function updateDashboard(data) {
       // Update stats
       const working = data.agents?.filter(a => a.status === 'working').length || 0;
@@ -134,307 +162,81 @@ try {
       document.getElementById('lastUpdate').textContent = `Last update: ${new Date().toLocaleTimeString()}`;
       
       // Update agent cards
-      renderAgentCards(data.agents);
+      data.agents?.forEach(agent => {
+        const card = document.querySelector(`[data-agent-id="${agent.id}"]`);
+        if (card) {
+          const statusEl = card.querySelector('.agent-card > div:last-child');
+          const dotEl = statusEl.querySelector('span');
+          
+          if (agent.status === 'working') {
+            statusEl.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold uppercase bg-green-500/15 text-green-500';
+            dotEl.className = 'w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]';
+            card.classList.add('border-green-500/30');
+          } else {
+            statusEl.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold uppercase bg-slate-600/15 text-slate-500';
+            dotEl.className = 'w-1.5 h-1.5 rounded-full bg-slate-500';
+            card.classList.remove('border-green-500/30');
+          }
+          statusEl.lastChild.textContent = ` ${agent.status}`;
+        }
+      });
       
-      // Update canvas if implemented
-      if (ctx) {
-        drawOffice(data.agents);
-      }
+      // Update canvas
+      drawOffice(data.agents);
     }
-    
-    function renderAgentCards(agents) {
-      const panel = document.getElementById('agentsPanel');
-      if (!panel || !agents) return;
-      
-      panel.innerHTML = agents.map(agent => {
-        const isWorking = agent.status === 'working';
-        const agentConfig = AGENTS.find(a => a.id === agent.id) || {};
-        
-        return `
-          <div class="agent-card ${isWorking ? 'active' : ''}">
-            <div class="agent-avatar" style="background: linear-gradient(135deg, ${agentConfig.gradient?.[0] || '#666'}, ${agentConfig.gradient?.[1] || '#444'})">
-              ${agentConfig.initial || agent.name[0]}
-            </div>
-            <div class="agent-info">
-              <div class="agent-name">${agent.name}</div>
-              <div class="agent-role">${agent.role || agentConfig.role}</div>
-            </div>
-            <div class="agent-status ${isWorking ? 'working' : 'idle'}">
-              <span class="status-indicator"></span>
-              ${agent.status}
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-    
+
     function drawOffice(agents) {
-      // Simplified office visualization
+      const canvas = document.getElementById('officeCanvas');
+      const ctx = canvas?.getContext('2d');
+      if (!ctx) return;
+      
+      // Clear
       ctx.fillStyle = '#0f172a';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       
       // Draw workstations
-      AGENTS.forEach((agent, i) => {
+      AGENTS.forEach(agent => {
         const status = agents?.find(a => a.id === agent.id)?.status || 'idle';
         const isWorking = status === 'working';
         
-        // Draw desk
-        ctx.fillStyle = '#334155';
+        // Desk
+        ctx.fillStyle = '#1e293b';
         ctx.fillRect(agent.x, agent.y, 120, 80);
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(agent.x, agent.y, 120, 80);
         
-        // Draw agent avatar
-        ctx.fillStyle = agent.gradient[1];
-        ctx.beginPath();
-        ctx.arc(agent.x + 60, agent.y + 40, 20, 0, Math.PI * 2);
-        ctx.fill();
-        
-        // Draw status ring
-        ctx.strokeStyle = isWorking ? '#22c55e' : '#64748b';
-        ctx.lineWidth = 3;
+        // Agent avatar
+        const grad = ctx.createLinearGradient(agent.x, agent.y, agent.x + 120, agent.y + 80);
+        grad.addColorStop(0, agent.color);
+        grad.addColorStop(1, agent.color + 'dd');
+        ctx.fillStyle = grad;
         ctx.beginPath();
         ctx.arc(agent.x + 60, agent.y + 40, 25, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Status ring
+        ctx.strokeStyle = isWorking ? '#22c55e' : '#64748b';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(agent.x + 60, agent.y + 40, 30, 0, Math.PI * 2);
         ctx.stroke();
         
-        // Draw label
+        // Initial
         ctx.fillStyle = '#fff';
-        ctx.font = '12px Inter';
+        ctx.font = 'bold 20px Inter';
         ctx.textAlign = 'center';
+        ctx.fillText(agent.name[0], agent.x + 60, agent.y + 47);
+        
+        // Label
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '12px Inter';
         ctx.fillText(agent.name, agent.x + 60, agent.y + 100);
       });
     }
-    
+
     // Initialize
-    if (initialData.agents?.length) {
-      updateDashboard(initialData);
-    }
+    drawOffice(initialData.agents);
     connectSSE();
   </script>
-
-  <style>
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 24px 32px;
-      border-bottom: 1px solid #1e293b;
-    }
-    
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-    }
-    
-    .logo {
-      width: 48px;
-      height: 48px;
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-    }
-    
-    .brand h1 {
-      font-size: 24px;
-      font-weight: 700;
-      color: #f8fafc;
-    }
-    
-    .subtitle {
-      font-size: 14px;
-      color: #64748b;
-    }
-    
-    .stats {
-      display: flex;
-      align-items: center;
-      gap: 32px;
-    }
-    
-    .stat {
-      text-align: center;
-    }
-    
-    .stat-value {
-      display: block;
-      font-size: 28px;
-      font-weight: 700;
-      color: #f8fafc;
-    }
-    
-    .stat-label {
-      font-size: 12px;
-      color: #64748b;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-    
-    .connection-status {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
-      background: #1e293b;
-      border-radius: 20px;
-    }
-    
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #64748b;
-    }
-    
-    .status-dot.connected {
-      background: #22c55e;
-      box-shadow: 0 0 8px #22c55e;
-    }
-    
-    .status-dot.disconnected {
-      background: #ef4444;
-      animation: pulse 1s infinite;
-    }
-    
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-    
-    .main {
-      display: grid;
-      grid-template-columns: 1fr 320px;
-      gap: 24px;
-      padding: 24px;
-      max-width: 1600px;
-      margin: 0 auto;
-    }
-    
-    .canvas-container {
-      background: #1e293b;
-      border-radius: 16px;
-      border: 1px solid #334155;
-      overflow: hidden;
-    }
-    
-    #officeCanvas {
-      width: 100%;
-      height: auto;
-      display: block;
-    }
-    
-    .agents-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    
-    .agent-card {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 16px;
-      background: #1e293b;
-      border: 1px solid #334155;
-      border-radius: 12px;
-      transition: all 0.2s;
-    }
-    
-    .agent-card:hover {
-      border-color: #6366f1;
-    }
-    
-    .agent-card.active {
-      border-color: #22c55e;
-      background: rgba(34, 197, 94, 0.05);
-    }
-    
-    .agent-avatar {
-      width: 44px;
-      height: 44px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 600;
-      color: white;
-    }
-    
-    .agent-info {
-      flex: 1;
-    }
-    
-    .agent-name {
-      font-weight: 600;
-      color: #f8fafc;
-    }
-    
-    .agent-role {
-      font-size: 12px;
-      color: #64748b;
-    }
-    
-    .agent-status {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-    }
-    
-    .agent-status.working {
-      background: rgba(34, 197, 94, 0.15);
-      color: #22c55e;
-    }
-    
-    .agent-status.idle {
-      background: rgba(148, 163, 184, 0.15);
-      color: #94a3b8;
-    }
-    
-    .status-indicator {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-    }
-    
-    .working .status-indicator {
-      background: #22c55e;
-      box-shadow: 0 0 6px #22c55e;
-    }
-    
-    .idle .status-indicator {
-      background: #94a3b8;
-    }
-    
-    .footer {
-      display: flex;
-      justify-content: space-between;
-      padding: 16px 32px;
-      border-top: 1px solid #1e293b;
-      font-size: 14px;
-      color: #64748b;
-    }
-    
-    @media (max-width: 1024px) {
-      .main {
-        grid-template-columns: 1fr;
-      }
-      
-      .header {
-        flex-direction: column;
-        gap: 16px;
-        text-align: center;
-      }
-      
-      .stats {
-        flex-wrap: wrap;
-        justify-content: center;
-      }
-    }
-  </style>
 </Layout>
