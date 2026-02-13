@@ -92,14 +92,14 @@ const AGENT_CONFIG = [
   </header>
 
   <!-- Main Content -->
-  <main class="grid grid-cols-1 xl:grid-cols-[1fr_380px] gap-6 p-6 max-w-[1600px] mx-auto">
+  <main class="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-6 p-4 lg:p-6 max-w-[1600px] mx-auto">
     <!-- Canvas Visualization -->
-    <div class="bg-[var(--color-bg-secondary)] rounded-2xl border border-[var(--color-border-default)] overflow-hidden shadow-lg">
+    <div class="bg-[var(--color-bg-secondary)] rounded-2xl border border-[var(--color-border-default)] overflow-hidden shadow-lg order-2 lg:order-1">
       <canvas id="officeCanvas" width="1200" height="700" class="w-full h-auto block"></canvas>
     </div>
 
     <!-- Agent Panel -->
-    <div class="space-y-3" id="agentsPanel">
+    <div class="space-y-3 order-1 lg:order-2" id="agentsPanel">
       {AGENT_CONFIG.map((agent) => {
         const status = initialData.agents?.find((a: any) => a.id === agent.id)?.status || 'idle';
         const isWorking = status === 'working';

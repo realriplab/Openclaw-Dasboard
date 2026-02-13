@@ -6,6 +6,15 @@ export class OfficeVisualization {
     this.ctx = canvas.getContext('2d');
     this.agents = [];
     this.animationFrame = null;
+    this.scale = 1;
+    this.offsetX = 0;
+    this.offsetY = 0;
+    this.isDragging = false;
+    this.lastTouchX = 0;
+    this.lastTouchY = 0;
+    
+    // Setup touch events for mobile
+    this.setupTouchEvents();
     
     // Office layout
     this.ROOMS = {
@@ -323,6 +332,59 @@ export class OfficeVisualization {
     ctx.beginPath();
     ctx.arc(x + 10, y - 15, 12, 0, Math.PI * 2);
     ctx.fill();
+  }
+  
+  setupTouchEvents() {
+    // Touch events for mobile pan and zoom
+    this.canvas.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        this.isDragging = true;
+        this.lastTouchX = e.touches[0].clientX;
+        this.lastTouchY = e.touches[0].clientY;
+      }
+    }, { passive: true });
+    
+    this.canvas.addEventListener('touchmove', (e) => {
+      if (this.isDragging && e.touches.length === 1) {
+        const deltaX = e.touches[0].clientX - this.lastTouchX;
+        const deltaY = e.touches[0].clientY - this.lastTouchY;
+        
+        this.offsetX += deltaX;
+        this.offsetY += deltaY;
+        
+        this.lastTouchX = e.touches[0].clientX;
+        this.lastTouchY = e.touches[0].clientY;
+        
+        this.render();
+      }
+    }, { passive: true });
+    
+    this.canvas.addEventListener('touchend', () => {
+      this.isDragging = false;
+    }, { passive: true });
+    
+    // Pinch to zoom
+    this.canvas.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        this.lastPinchDistance = Math.sqrt(dx * dx + dy * dy);
+      }
+    }, { passive: true });
+    
+    this.canvas.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 2 && this.lastPinchDistance) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        const scaleChange = distance / this.lastPinchDistance;
+        this.scale = Math.max(0.5, Math.min(3, this.scale * scaleChange));
+        this.lastPinchDistance = distance;
+        
+        this.render();
+      }
+    }, { passive: true });
   }
   
   destroy() {
