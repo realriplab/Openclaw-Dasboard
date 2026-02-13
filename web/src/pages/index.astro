@@ -227,7 +227,14 @@ const AGENT_CONFIG = [
       }
 
       // Initialize
+      office.resize();
       office.setAgents(initialData.agents);
+      
+      // Handle resize
+      window.addEventListener('resize', () => {
+        office.resize();
+      });
+      
       connectSSE();
     });
     

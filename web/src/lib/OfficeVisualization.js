@@ -12,11 +12,12 @@ export class OfficeVisualization {
     this.isDragging = false;
     this.lastTouchX = 0;
     this.lastTouchY = 0;
+    this.dpr = window.devicePixelRatio || 1;
     
     // Setup touch events for mobile
     this.setupTouchEvents();
     
-    // Office layout
+    // Office layout (design for 1200x700 coordinate space)
     this.ROOMS = {
       warRoom: { x: 50, y: 40, w: 220, h: 160, name: 'War Room', color: '#6366f1' },
       founderOffice: { x: 290, y: 40, w: 220, h: 160, name: 'Founder Office', color: '#8b5cf6' },
@@ -41,6 +42,35 @@ export class OfficeVisualization {
       coach: { name: 'Coach', color: '#10b981', initial: 'C' },
       main: { name: 'Main', color: '#06b6d4', initial: 'M' }
     };
+    
+    // Set canvas size based on container
+    this.resize();
+  }
+  
+  resize() {
+    const canvas = this.canvas;
+    const container = canvas.parentElement;
+    if (!container) return;
+    
+    // Get container dimensions
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight || containerWidth * 0.58; // maintain aspect ratio
+    
+    // Set canvas internal resolution (design resolution: 1200x700)
+    const designWidth = 1200;
+    const designHeight = 700;
+    
+    canvas.width = designWidth * this.dpr;
+    canvas.height = designHeight * this.dpr;
+    
+    // Set display size via CSS
+    canvas.style.width = `${containerWidth}px`;
+    canvas.style.height = `${(containerWidth * designHeight / designWidth)}px`;
+    
+    // Scale context for DPR
+    this.ctx.scale(this.dpr, this.dpr);
+    
+    this.render();
   }
   
   setAgents(agents) {
@@ -52,19 +82,16 @@ export class OfficeVisualization {
     const ctx = this.ctx;
     const canvas = this.canvas;
     
-    // Handle HiDPI displays - ensure canvas matches display size
-    const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
+    // Reset transform and clear
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    if (canvas.width !== rect.width * dpr || canvas.height !== rect.height * dpr) {
-      canvas.width = rect.width * dpr;
-      canvas.height = rect.height * dpr;
-      ctx.scale(dpr, dpr);
-    }
+    // Re-apply DPR scale
+    ctx.scale(this.dpr, this.dpr);
     
-    // Clear canvas
+    // Clear canvas with background
     ctx.fillStyle = '#0f172a';
-    ctx.fillRect(0, 0, rect.width, rect.height);
+    ctx.fillRect(0, 0, 1200, 700);
     
     // Draw floor grid
     this.drawFloor();
@@ -90,10 +117,9 @@ export class OfficeVisualization {
   drawFloor() {
     const ctx = this.ctx;
     const tileSize = 40;
-    const rect = this.canvas.getBoundingClientRect();
     
-    for (let y = 0; y < rect.height; y += tileSize) {
-      for (let x = 0; x < rect.width; x += tileSize) {
+    for (let y = 0; y < 700; y += tileSize) {
+      for (let x = 0; x < 1200; x += tileSize) {
         const isEven = ((x / tileSize) + (y / tileSize)) % 2 === 0;
         ctx.fillStyle = isEven ? '#0a1929' : '#0d1f33';
         ctx.fillRect(x, y, tileSize, tileSize);
@@ -161,42 +187,38 @@ export class OfficeVisualization {
   
   drawExecutiveDesk(room) {
     const ctx = this.ctx;
+    const cx = room.x + room.w / 2;
+    const cy = room.y + room.h / 2;
     
-    // Desk
-    ctx.fillStyle = '#5d4037';
-    ctx.fillRect(room.x + 100, room.y + 60, 80, 40);
+    // Large desk
+    ctx.fillStyle = '#475569';
+    ctx.fillRect(cx - 60, cy - 30, 120, 60);
     
-    // Monitor
-    ctx.fillStyle = '#1e293b';
-    ctx.fillRect(room.x + 130, room.y + 45, 20, 15);
+    // Chair
+    ctx.fillStyle = '#334155';
+    ctx.fillRect(cx - 20, cy + 40, 40, 30);
     
     // Bookshelf
-    ctx.fillStyle = '#3e2723';
-    ctx.fillRect(room.x + 15, room.y + 40, 40, 100);
+    ctx.fillStyle = '#334155';
+    ctx.fillRect(room.x + 10, room.y + 40, 30, 100);
     
     // Books
-    const colors = ['#ef4444', '#3b82f6', '#22c55e', '#f59e0b'];
-    for (let i = 0; i < 12; i++) {
-      ctx.fillStyle = colors[i % colors.length];
-      ctx.fillRect(room.x + 18 + (i % 3) * 12, room.y + 45 + Math.floor(i / 3) * 25, 8, 18);
+    for (let i = 0; i < 4; i++) {
+      ctx.fillStyle = ['#ef4444', '#3b82f6', '#22c55e', '#f59e0b'][i];
+      ctx.fillRect(room.x + 12, room.y + 45 + i * 22, 26, 18);
     }
-    
-    // Couch
-    ctx.fillStyle = '#6b4423';
-    ctx.fillRect(room.x + 30, room.y + 120, 60, 30);
   }
   
   drawKitchenArea(room) {
     const ctx = this.ctx;
     
-    // Cabinets
-    ctx.fillStyle = '#f1f5f9';
-    ctx.fillRect(room.x + 10, room.y + 40, 180, 30);
-    ctx.fillRect(room.x + 10, room.y + 80, 180, 70);
+    // Counter
+    ctx.fillStyle = '#475569';
+    ctx.fillRect(room.x + 20, room.y + 100, 180, 40);
     
     // Fridge
-    ctx.fillStyle = '#e2e8f0';
-    ctx.fillRect(room.x + 140, room.y + 50, 40, 110);
+    ctx.fillStyle = '#64748b';
+    ctx.fillRect(room.x + 150, room.y + 20, 50, 70);
     
     // Coffee machine
     ctx.fillStyle = '#334155';
@@ -249,65 +271,53 @@ export class OfficeVisualization {
       ctx.fillStyle = '#fff';
       ctx.font = 'bold 12px Inter, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(agent.initial, cubicle.x + 100, cubicle.y + 75);
+      ctx.textBaseline = 'middle';
+      ctx.fillText(agent.initial, cubicle.x + 100, cubicle.y + 70);
+      
+      // Activity indicator
+      ctx.fillStyle = '#22c55e';
+      ctx.beginPath();
+      ctx.arc(cubicle.x + 115, cubicle.y + 55, 4, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      // Empty chair
+      ctx.fillStyle = '#475569';
+      ctx.beginPath();
+      ctx.arc(cubicle.x + 100, cubicle.y + 70, 12, 0, Math.PI * 2);
+      ctx.fill();
     }
-    
-    // Name plate
-    ctx.fillStyle = '#1e293b';
-    ctx.fillRect(cubicle.x + 25, cubicle.y + 55, 70, 18);
-    ctx.fillStyle = '#e2e8f0';
-    ctx.font = '10px Inter, sans-serif';
-    ctx.fillText(agent.name, cubicle.x + 30, cubicle.y + 67);
-    
-    // Status dot
-    ctx.fillStyle = isWorking ? '#22c55e' : '#64748b';
-    ctx.beginPath();
-    ctx.arc(cubicle.x + 165, cubicle.y + 25, 5, 0, Math.PI * 2);
-    ctx.fill();
   }
   
   drawLounge() {
     const ctx = this.ctx;
-    const r = this.ROOMS.lounge;
+    const room = this.ROOMS.lounge;
     
-    // Sofa
-    ctx.fillStyle = '#374151';
-    ctx.fillRect(r.x + 20, r.y + 40, 100, 50);
+    // Sofas
+    ctx.fillStyle = '#475569';
+    // Top sofa
+    ctx.fillRect(room.x + 30, room.y + 40, 200, 60);
+    // Bottom sofa
+    ctx.fillRect(room.x + 30, room.y + 300, 200, 60);
+    // Left sofa
+    ctx.fillRect(room.x + 30, room.y + 120, 60, 160);
     
     // Coffee table
-    ctx.fillStyle = '#4b5563';
-    ctx.fillRect(r.x + 40, r.y + 110, 60, 40);
+    ctx.fillStyle = '#64748b';
+    ctx.fillRect(room.x + 120, room.y + 170, 80, 60);
     
-    // Water cooler
-    ctx.fillStyle = '#3b82f6';
-    ctx.fillRect(r.x + 160, r.y + 50, 30, 50);
+    // TV
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(room.x + 180, room.y + 140, 10, 120);
     
-    // Bean bags
-    ctx.fillStyle = '#ef4444';
-    ctx.beginPath();
-    ctx.arc(r.x + 200, r.y + 120, 25, 0, Math.PI * 2);
-    ctx.fill();
-    
-    ctx.fillStyle = '#f59e0b';
-    ctx.beginPath();
-    ctx.arc(r.x + 50, r.y + 200, 25, 0, Math.PI * 2);
-    ctx.fill();
-    
-    // Ping pong table
-    ctx.fillStyle = '#22c55e';
-    ctx.fillRect(r.x + 130, r.y + 180, 120, 70);
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(r.x + 185, r.y + 180, 10, 70);
-    
-    // Whiteboard
-    ctx.fillStyle = '#f1f5f9';
-    ctx.fillRect(r.x + 20, r.y + 280, 100, 70);
+    // TV stand
+    ctx.fillStyle = '#334155';
+    ctx.fillRect(room.x + 170, room.y + 260, 30, 10);
   }
   
   drawCorridor() {
     const ctx = this.ctx;
     
-    // Corridor line
+    // Main corridor line
     ctx.strokeStyle = '#334155';
     ctx.setLineDash([5, 5]);
     ctx.lineWidth = 1;
@@ -396,6 +406,11 @@ export class OfficeVisualization {
         this.render();
       }
     }, { passive: true });
+    
+    // Handle window resize
+    window.addEventListener('resize', () => {
+      this.resize();
+    });
   }
   
   destroy() {
